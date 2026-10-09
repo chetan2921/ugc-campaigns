@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from app.db import SessionLocal
 from app.errors import DomainError
 from app.models import Campaign, User, Wallet
-from app.services import applications
+from app.services import applications, submissions
 
 NOW = datetime(2026, 10, 12, 6, 30, tzinfo=timezone.utc)  # 12:00 IST, outside quiet hours
 FEE = 1_000_000  # ₹10,000 in paise
@@ -55,6 +55,16 @@ def applied(db, campaign: Campaign, creator: User | None = None):
 def approved(db, campaign: Campaign):
     app = applied(db, campaign)
     return applications.approve(db, campaign.brand, app.id, NOW)
+
+
+def submitted(db, campaign: Campaign):
+    app = approved(db, campaign)
+    return submissions.submit(db, app.creator, app.id, f"https://www.instagram.com/reel/Post{app.id}/", NOW)
+
+
+def paid(db, campaign: Campaign):
+    app = submitted(db, campaign)
+    return submissions.review(db, campaign.brand, app.id, "approve", None, NOW)
 
 
 def run_concurrently(*calls) -> list[str]:

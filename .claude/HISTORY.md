@@ -15,3 +15,6 @@
 - 2026-10-10 Task 5 review: lock the campaign row before its applications on apply, approve, decline, withdraw, and cancel, and re-check status under those locks. Not pushed.
   Lock order is campaign then application, chosen over application then campaign.
   The opposite order deadlocks cancel with approve or withdraw, and a status check outside the campaign lock lets an apply land on a cancelled campaign or lets cancel overwrite withdrawn.
+- 2026-10-10 Task 6: Instagram submit, review (revise, reject, pay), and wallet credit of the net. Submission, money, and reservation tests green, including five parallel payout runs. Not pushed.
+  Submit and review lock via `_lock_campaign_then_application`, chosen over `lock_application`.
+  `lock_application` locks only the application row. Paying or rejecting then updates the campaign, and that order deadlocks with cancel, which locks the campaign first.

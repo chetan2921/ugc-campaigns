@@ -1,6 +1,11 @@
 import pytest
+from sqlalchemy import func, select
 
 from app.domain.money import format_inr, payout_breakdown
+from app.errors import DomainError
+from app.models import LedgerEntry, Payout, User, Wallet
+from app.services import submissions
+from tests.factories import NOW, make_campaign, make_user, paid, run_concurrently, submitted
 
 
 def test_ten_thousand_rupee_fee_bill():
@@ -35,3 +40,35 @@ def test_rounding_example_with_odd_rupees():
 ])
 def test_format_inr_uses_indian_grouping(paise, text):
     assert format_inr(paise) == text
+
+
+def test_approving_a_post_credits_the_net_amount(db):
+    app = paid(db, make_campaign(db, make_user(db, "brand")))
+    assert app.status == "paid"
+    assert app.payout.net_paise == 873_180
+    assert db.get(Wallet, app.creator_id).balance_paise == 873_180
+    entry = db.scalars(select(LedgerEntry).where(LedgerEntry.user_id == app.creator_id)).one()
+    assert (entry.kind, entry.amount_paise, entry.balance_after_paise) == ("payout", 873_180, 873_180)
+
+
+def test_approving_twice_pays_once(db):
+    brand = make_user(db, "brand")
+    app = paid(db, make_campaign(db, brand))
+    with pytest.raises(DomainError):
+        submissions.review(db, brand, app.id, "approve", None, NOW)
+    db.rollback()
+    assert db.get(Wallet, app.creator_id).balance_paise == 873_180
+    assert db.scalar(select(func.count()).select_from(Payout)) == 1
+
+
+def test_parallel_approvals_of_one_post_pay_once(db):
+    brand = make_user(db, "brand")
+    app = submitted(db, make_campaign(db, brand))
+    brand_id, app_id, creator_id = brand.id, app.id, app.creator_id
+    results = run_concurrently(
+        *[lambda s: submissions.review(s, s.get(User, brand_id), app_id, "approve", None, NOW)] * 4
+    )
+    assert results.count("ok") == 1
+    db.expire_all()
+    assert db.get(Wallet, creator_id).balance_paise == 873_180
+    assert db.scalar(select(func.count()).select_from(Payout)) == 1

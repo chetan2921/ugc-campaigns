@@ -20,6 +20,10 @@ Fill these in as tasks land.
 - cancel declines pending and keeps approved creators: `test_cancelling_declines_pending_but_keeps_approved_creators`
 - cancel raced with apply and withdraw: `test_racing_cancel_keeps_approved_and_leaves_no_applied_row`
 - concurrency test: `test_parallel_approvals_never_overfill_the_last_slot`
+- submit, revise, and reject rules: `api/tests/test_submissions.py`
+- payout credits the net once: `test_approving_a_post_credits_the_net_amount`, `test_approving_twice_pays_once`
+- parallel payout of one post: `test_parallel_approvals_of_one_post_pay_once`
+- reject frees the slot: `test_rejecting_a_post_frees_the_slot`
 - HTTP test with auth headers: `api/tests/test_api_flow.py`
 
 ## Strategies that work here
@@ -46,7 +50,12 @@ Fill these in as tasks land.
 - **Re-run the `-k parallel` tests five times** whenever reservation, payout or
   withdrawal code changes. Task 4's last-slot test passed all five runs
   (about one minute each against Neon; that wait is the remote round-trips,
-  not a hang).
+  not a hang). Task 6 ran the same `-k parallel` set five times (last-slot
+  plus one-post payout): 2 passed each run, in 92s, 96s, 93s, 90s, and 155s.
+  The slow fifth run still passed; the wait is Neon, not a deadlock.
+- **The same-post check is a read, not a unique index.** Two applications can
+  still submit one URL at the same moment. The sequential test does not catch
+  that race.
 - **Slot updates use `synchronize_session=False`.** This session sees the new
   counts after its own `commit`, or after `expire_all()` when another session
   wrote them. `run_concurrently` returns `"ok"` or the `DomainError` message;

@@ -6,8 +6,8 @@ from app.clock import utcnow
 from app.db import get_db
 from app.models import User
 from app.presenters import application_out
-from app.schemas import ApplicationOut, DeclineIn
-from app.services import applications
+from app.schemas import ApplicationOut, DeclineIn, ReviewIn, SubmitIn
+from app.services import applications, submissions
 
 router = APIRouter(prefix="/applications", tags=["applications"])
 
@@ -30,3 +30,13 @@ def decline(application_id: int, data: DeclineIn, brand: User = Depends(brand_on
 @router.post("/{application_id}/withdraw", response_model=ApplicationOut)
 def withdraw(application_id: int, creator: User = Depends(creator_only), db: Session = Depends(get_db)):
     return application_out(applications.withdraw(db, creator, application_id, utcnow()))
+
+
+@router.post("/{application_id}/submissions", response_model=ApplicationOut)
+def submit(application_id: int, data: SubmitIn, creator: User = Depends(creator_only), db: Session = Depends(get_db)):
+    return application_out(submissions.submit(db, creator, application_id, data.url, utcnow()))
+
+
+@router.post("/{application_id}/review", response_model=ApplicationOut)
+def review(application_id: int, data: ReviewIn, brand: User = Depends(brand_only), db: Session = Depends(get_db)):
+    return application_out(submissions.review(db, brand, application_id, data.action, data.note, utcnow()))

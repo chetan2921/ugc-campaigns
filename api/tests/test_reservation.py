@@ -3,8 +3,8 @@ from sqlalchemy import select
 
 from app.errors import DomainError
 from app.models import Application, Campaign, Notification, User
-from app.services import applications, campaigns
-from tests.factories import FEE, NOW, applied, approved, make_campaign, make_user, run_concurrently
+from app.services import applications, campaigns, submissions
+from tests.factories import FEE, NOW, applied, approved, make_campaign, make_user, paid, run_concurrently, submitted
 
 
 def test_approving_reserves_the_fee_and_a_slot(db):
@@ -128,3 +128,34 @@ def test_racing_cancel_keeps_approved_and_leaves_no_applied_row(db):
     statuses = db.scalars(select(Application.status).where(Application.campaign_id == campaign_id)).all()
     assert "applied" not in statuses
     assert (db.get(Campaign, campaign_id).filled_slots, db.get(Campaign, campaign_id).reserved_paise) == (1, FEE)
+
+
+def test_rejecting_a_post_frees_the_slot(db):
+    brand = make_user(db, "brand")
+    campaign = make_campaign(db, brand)
+    app = submitted(db, campaign)
+    submissions.review(db, brand, app.id, "reject", "Product not visible", NOW)
+    assert app.status == "rejected"
+    assert (campaign.filled_slots, campaign.reserved_paise, campaign.spent_paise) == (0, 0, 0)
+
+
+def test_payout_moves_the_fee_from_reserved_to_spent(db):
+    campaign = make_campaign(db, make_user(db, "brand"))
+    paid(db, campaign)
+    assert (campaign.filled_slots, campaign.reserved_paise, campaign.spent_paise) == (1, 0, FEE)
+
+
+def test_cannot_withdraw_after_submitting(db):
+    app = submitted(db, make_campaign(db, make_user(db, "brand")))
+    with pytest.raises(DomainError, match="before submitting"):
+        applications.withdraw(db, app.creator, app.id, NOW)
+
+
+def test_cancelled_campaign_still_pays_approved_creators(db):
+    brand = make_user(db, "brand")
+    campaign = make_campaign(db, brand)
+    app = approved(db, campaign)
+    campaigns.cancel_campaign(db, brand, campaign.id, NOW)
+    submissions.submit(db, app.creator, app.id, "https://www.instagram.com/reel/AfterCancel1/", NOW)
+    submissions.review(db, brand, app.id, "approve", None, NOW)
+    assert app.status == "paid"
