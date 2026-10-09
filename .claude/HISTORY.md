@@ -12,3 +12,6 @@
 - 2026-10-10 Task 3: payout maths, IST quiet hours and the application state table; domain tests green with health and auth. Not pushed.
 - 2026-10-10 Task 4: apply, approve with atomic slot and budget reservation, decline, withdraw; reservation tests green, including five parallel last-slot runs. Not pushed.
 - 2026-10-10 Task 5: campaign create/edit/cancel rules, presenters, and campaign/application routes; campaign-rule and reservation tests green. Not pushed.
+- 2026-10-10 Task 5 review: lock the campaign row before its applications on apply, approve, decline, withdraw, and cancel, and re-check status under those locks. Not pushed.
+  Lock order is campaign then application, chosen over application then campaign.
+  The opposite order deadlocks cancel with approve or withdraw, and a status check outside the campaign lock lets an apply land on a cancelled campaign or lets cancel overwrite withdrawn.

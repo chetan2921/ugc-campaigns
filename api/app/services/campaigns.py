@@ -7,6 +7,7 @@ from app.domain.money import format_inr
 from app.errors import DomainError
 from app.models import Application, Campaign, User
 from app.schemas import CampaignEdit, CampaignIn
+from app.services.applications import lock_campaign
 from app.services.notify import enqueue
 from app.services.transitions import move
 
@@ -38,7 +39,7 @@ def create_campaign(db: Session, brand: User, data: CampaignIn, now: datetime) -
 
 
 def _lock_own_campaign(db: Session, brand: User, campaign_id: int) -> Campaign:
-    campaign = db.execute(select(Campaign).where(Campaign.id == campaign_id).with_for_update()).scalar_one_or_none()
+    campaign = lock_campaign(db, campaign_id)
     if campaign is None or campaign.brand_id != brand.id:
         raise DomainError("Campaign not found", 404)
     return campaign
@@ -47,6 +48,15 @@ def _lock_own_campaign(db: Session, brand: User, campaign_id: int) -> Campaign:
 def _live_applications(db: Session, campaign_id: int) -> list[Application]:
     return list(db.scalars(select(Application).where(Application.campaign_id == campaign_id,
                                                      Application.status.in_(LIVE_STATUSES))))
+
+
+def _lock_live_applications(db: Session, campaign_id: int) -> list[Application]:
+    return list(db.scalars(
+        select(Application)
+        .where(Application.campaign_id == campaign_id, Application.status.in_(LIVE_STATUSES))
+        .with_for_update(of=Application)
+        .execution_options(populate_existing=True)
+    ))
 
 
 def edit_campaign(db: Session, brand: User, campaign_id: int, data: CampaignEdit, now: datetime) -> Campaign:
@@ -77,7 +87,7 @@ def cancel_campaign(db: Session, brand: User, campaign_id: int, now: datetime) -
     if campaign.status != "active":
         raise DomainError("This campaign is already cancelled")
     campaign.status = "cancelled"
-    for app in _live_applications(db, campaign.id):
+    for app in _lock_live_applications(db, campaign.id):
         if app.status == "applied":
             move(db, app, "declined", now, "The brand cancelled the campaign")
         else:  # approved creators can't be removed: they keep their slot and still get paid

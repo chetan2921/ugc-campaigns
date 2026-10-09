@@ -18,6 +18,7 @@ Fill these in as tasks land.
 - service-level test with factories: `api/tests/test_reservation.py`
 - campaign create/edit/cancel rules: `api/tests/test_campaign_rules.py`
 - cancel declines pending and keeps approved creators: `test_cancelling_declines_pending_but_keeps_approved_creators`
+- cancel raced with apply and withdraw: `test_racing_cancel_keeps_approved_and_leaves_no_applied_row`
 - concurrency test: `test_parallel_approvals_never_overfill_the_last_slot`
 - HTTP test with auth headers: `api/tests/test_api_flow.py`
 

@@ -10,14 +10,29 @@ from app.services.slots import release_slot, reserve_slot
 from app.services.transitions import move, record
 
 
+def lock_campaign(db: Session, campaign_id: int) -> Campaign | None:
+    # Campaign row first, then application rows: the opposite order deadlocks with cancel.
+    return db.execute(
+        select(Campaign).where(Campaign.id == campaign_id).with_for_update().execution_options(populate_existing=True)
+    ).scalar_one_or_none()
+
+
 def lock_application(db: Session, application_id: int) -> Application:
     """Load and row-lock the application, so two requests on it run one after the other."""
     app = db.execute(
         select(Application).where(Application.id == application_id).with_for_update(of=Application)
+        .execution_options(populate_existing=True)
     ).scalar_one_or_none()
     if app is None:
         raise DomainError("Application not found", 404)
     return app
+
+
+def _lock_campaign_then_application(db: Session, application_id: int) -> Application:
+    campaign_id = db.scalar(select(Application.campaign_id).where(Application.id == application_id))
+    if campaign_id is None or lock_campaign(db, campaign_id) is None:
+        raise DomainError("Application not found", 404)
+    return lock_application(db, application_id)
 
 
 def ensure_brand(app: Application, brand: User) -> None:
@@ -31,7 +46,7 @@ def ensure_creator(app: Application, creator: User) -> None:
 
 
 def apply(db: Session, creator: User, campaign_id: int, note: str | None, now: datetime) -> Application:
-    campaign = db.get(Campaign, campaign_id)
+    campaign = lock_campaign(db, campaign_id)
     if campaign is None:
         raise DomainError("Campaign not found", 404)
     if campaign.status != "active" or now >= campaign.apply_deadline:
@@ -51,7 +66,7 @@ def apply(db: Session, creator: User, campaign_id: int, note: str | None, now: d
 
 
 def approve(db: Session, brand: User, application_id: int, now: datetime) -> Application:
-    app = lock_application(db, application_id)
+    app = _lock_campaign_then_application(db, application_id)
     ensure_brand(app, brand)
     if now >= app.campaign.submit_deadline:
         raise DomainError("The submission deadline has passed, so no more creators can be approved")
@@ -63,7 +78,7 @@ def approve(db: Session, brand: User, application_id: int, now: datetime) -> App
 
 
 def decline(db: Session, brand: User, application_id: int, reason: str | None, now: datetime) -> Application:
-    app = lock_application(db, application_id)
+    app = _lock_campaign_then_application(db, application_id)
     ensure_brand(app, brand)
     move(db, app, "declined", now, (reason or "").strip() or None)
     db.commit()
@@ -71,7 +86,7 @@ def decline(db: Session, brand: User, application_id: int, reason: str | None, n
 
 
 def withdraw(db: Session, creator: User, application_id: int, now: datetime) -> Application:
-    app = lock_application(db, application_id)
+    app = _lock_campaign_then_application(db, application_id)
     ensure_creator(app, creator)
     if app.status not in ("applied", "approved"):
         raise DomainError("You can only withdraw before submitting your post")

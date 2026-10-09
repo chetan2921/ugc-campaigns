@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import select
 
 from app.errors import DomainError
-from app.models import Application, Notification, User
+from app.models import Application, Campaign, Notification, User
 from app.services import applications, campaigns
 from tests.factories import FEE, NOW, applied, approved, make_campaign, make_user, run_concurrently
 
@@ -101,3 +101,30 @@ def test_cancelling_declines_pending_but_keeps_approved_creators(db):
     assert pending.status == "declined"
     assert kept.status == "approved"
     assert (campaign.filled_slots, campaign.reserved_paise) == (1, FEE)
+
+
+def test_racing_cancel_keeps_approved_and_leaves_no_applied_row(db):
+    brand = make_user(db, "brand")
+    campaign = make_campaign(db, brand, slots=4)
+    kept, pending = approved(db, campaign), applied(db, campaign)
+    creator_ids = [make_user(db, "creator").id for _ in range(3)]
+    brand_id, campaign_id, kept_id, pending_id = brand.id, campaign.id, kept.id, pending.id
+    pending_creator_id = pending.creator_id
+
+    results = run_concurrently(
+        lambda s: campaigns.cancel_campaign(s, s.get(User, brand_id), campaign_id, NOW),
+        lambda s: applications.withdraw(s, s.get(User, pending_creator_id), pending_id, NOW),
+        *[
+            (lambda s, creator_id=creator_id: applications.apply(s, s.get(User, creator_id), campaign_id, None, NOW))
+            for creator_id in creator_ids
+        ],
+    )
+
+    assert not any("deadlock" in result for result in results)
+    db.expire_all()
+    assert db.get(Campaign, campaign_id).status == "cancelled"
+    assert db.get(Application, kept_id).status == "approved"
+    assert db.get(Application, pending_id).status in ("withdrawn", "declined")
+    statuses = db.scalars(select(Application.status).where(Application.campaign_id == campaign_id)).all()
+    assert "applied" not in statuses
+    assert (db.get(Campaign, campaign_id).filled_slots, db.get(Campaign, campaign_id).reserved_paise) == (1, FEE)
