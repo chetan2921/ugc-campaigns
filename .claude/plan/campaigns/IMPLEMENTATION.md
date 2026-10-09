@@ -1,22 +1,12 @@
 # campaigns implementation
 
 ## Now
-Planning is done. The spec, plan, contract and this tree are committed to the
-public repo https://github.com/chetan2921/ugc-campaigns. No code yet. The build
-runs in a fresh session: plan Task 1 (scaffold). Task 0 (the public-site
-walkthrough) is done. Tasks and code are in `PLAN.md`.
+Task 2: Data model, migration, signup/login. Steps and code are in `PLAN.md`.
 
-### In flight: Task 1, scaffold
-- [ ] repo files (.gitignore, api/.env.example). `api/.env` (filled in by the user, gitignored) has both Neon URLs
-- [ ] failing `test_health`, `api/.env` present, venv installed
-- [ ] pin dependencies
-- [ ] config, db, clock, errors, main
-- [ ] `test_health` green, including the check that tests run on the `_test` database
-- [ ] leak check passes (see AGENTS.md for the command)
-- [ ] commit, then `git push origin HEAD:main` (the repo already exists and is public). Full suite green, then stop here.
+### In flight: Task 2, data model and auth
+- (see PLAN.md Task 2 checklist when starting)
 
 ## Next
-- 2. Data model, migration, signup/login
 - 3. Domain core: money, IST quiet hours, state table
 - 4. Apply / approve with atomic reservation / decline / withdraw
 - 5. Campaign rules, presenters, routes
@@ -34,6 +24,8 @@ Cut line if time runs short: polish in Task 13 (the slop-scan follow-ups)
 goes first. Tasks 1–12 and 14 are required by the brief.
 
 ## Done
+- 2026-10-10 Task 1: FastAPI scaffold, config/db/clock/errors/main, health check,
+  pinned requirements, conftest guard for `_test` database, leak check green.
 - 2026-10-10 UGCIndia public-site walkthrough. Notes in
   `.claude/plan/campaigns/ugcindia-notes.md`. Logged-in screens were not
   opened. README-only ideas updated in the spec; the build scope did not move.
