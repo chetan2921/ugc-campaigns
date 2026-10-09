@@ -11,3 +11,4 @@
 - 2026-10-10 Task 2: ten-table data model, Alembic initial schema, signup/login with roles; auth and health tests green. Not pushed.
 - 2026-10-10 Task 3: payout maths, IST quiet hours and the application state table; domain tests green with health and auth. Not pushed.
 - 2026-10-10 Task 4: apply, approve with atomic slot and budget reservation, decline, withdraw; reservation tests green, including five parallel last-slot runs. Not pushed.
+- 2026-10-10 Task 5: campaign create/edit/cancel rules, presenters, and campaign/application routes; campaign-rule and reservation tests green. Not pushed.

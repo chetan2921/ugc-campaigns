@@ -3,7 +3,7 @@ from sqlalchemy import select
 
 from app.errors import DomainError
 from app.models import Application, Notification, User
-from app.services import applications
+from app.services import applications, campaigns
 from tests.factories import FEE, NOW, applied, approved, make_campaign, make_user, run_concurrently
 
 
@@ -90,3 +90,14 @@ def test_every_status_change_is_logged_and_notified(db):
         select(Notification.user_id, Notification.event).where(Notification.channel == "email").order_by(Notification.id)
     ).all()
     assert emails == [(brand.id, "application_applied"), (app.creator_id, "application_approved")]
+
+
+def test_cancelling_declines_pending_but_keeps_approved_creators(db):
+    brand = make_user(db, "brand")
+    campaign = make_campaign(db, brand)
+    pending, kept = applied(db, campaign), approved(db, campaign)
+    campaigns.cancel_campaign(db, brand, campaign.id, NOW)
+    assert campaign.status == "cancelled"
+    assert pending.status == "declined"
+    assert kept.status == "approved"
+    assert (campaign.filled_slots, campaign.reserved_paise) == (1, FEE)

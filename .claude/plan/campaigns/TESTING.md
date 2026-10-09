@@ -16,6 +16,8 @@ Fill these in as tasks land.
 - quiet hours (`ist()` helper): `api/tests/test_notifications.py`
 - application state table: `api/tests/test_states.py`
 - service-level test with factories: `api/tests/test_reservation.py`
+- campaign create/edit/cancel rules: `api/tests/test_campaign_rules.py`
+- cancel declines pending and keeps approved creators: `test_cancelling_declines_pending_but_keeps_approved_creators`
 - concurrency test: `test_parallel_approvals_never_overfill_the_last_slot`
 - HTTP test with auth headers: `api/tests/test_api_flow.py`
 
@@ -37,6 +39,9 @@ Fill these in as tasks land.
   sessions or threads.
 - **After an expected `DomainError`,** call `db.rollback()` before reading more
   from the same session.
+- **Presenters are outside the service tests.** Task 5 checked create, list,
+  apply, approve, get and cancel once through TestClient; that check was not
+  kept. The lasting HTTP test is still Task 9's `test_api_flow.py`.
 - **Re-run the `-k parallel` tests five times** whenever reservation, payout or
   withdrawal code changes. Task 4's last-slot test passed all five runs
   (about one minute each against Neon; that wait is the remote round-trips,
