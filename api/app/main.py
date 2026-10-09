@@ -19,3 +19,8 @@ def handle_domain_error(request: Request, exc: DomainError) -> JSONResponse:
 @app.get("/health")
 def health():
     return {"ok": True}
+
+
+from app.routers import auth  # noqa: E402
+
+app.include_router(auth.router)

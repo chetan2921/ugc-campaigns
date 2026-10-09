@@ -1,13 +1,12 @@
 # campaigns implementation
 
 ## Now
-Task 2: Data model, migration, signup/login. Steps and code are in `PLAN.md`.
+Task 3: Domain core: money, IST quiet hours, state table. Steps and code are in `PLAN.md`.
 
-### In flight: Task 2, data model and auth
-- (see PLAN.md Task 2 checklist when starting)
+### In flight: Task 3, domain core
+- (see PLAN.md Task 3 checklist when starting)
 
 ## Next
-- 3. Domain core: money, IST quiet hours, state table
 - 4. Apply / approve with atomic reservation / decline / withdraw
 - 5. Campaign rules, presenters, routes
 - 6. Submit, review, payout
@@ -24,6 +23,7 @@ Cut line if time runs short: polish in Task 13 (the slop-scan follow-ups)
 goes first. Tasks 1–12 and 14 are required by the brief.
 
 ## Done
+- 2026-10-10 Task 2: ten-table data model, Alembic initial schema, signup/login with roles. Auth tests green.
 - 2026-10-10 Task 1: FastAPI scaffold, config/db/clock/errors/main, health check,
   pinned requirements, conftest guard for `_test` database, leak check green.
 - 2026-10-10 UGCIndia public-site walkthrough. Notes in
