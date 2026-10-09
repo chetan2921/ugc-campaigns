@@ -31,6 +31,11 @@ before changing either side, and update it when a side moves.
   `"$(git rev-parse --git-common-dir)/../.claude/leak-check.sh"`. It lives only
   in the main checkout, is git-excluded, and the path works from worktrees too.
   Never open, print or edit it, so its search terms stay out of the chat logs.
+- **Secrets live only in `api/.env`** (gitignored and filled in by the user):
+  the Neon database URLs and the JWT secret. Never print it, never ask for its
+  values in chat, and never commit it. `api/.env.example` has placeholders. A
+  worktree copies the real file from the main checkout:
+  `cp "$(git rev-parse --git-common-dir)/../api/.env" api/.env`.
 - **This tree is public.** Never write credentials, tokens or internal URLs
   into `AGENTS.md`, `CLAUDE.md` or anything under `.claude/`. Commit memory
   updates together with the change they describe, then

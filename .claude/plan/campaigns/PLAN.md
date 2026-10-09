@@ -17,9 +17,8 @@ are queued and respect quiet hours.
 **Tech Stack:**
 - Python 3.14, FastAPI, sync SQLAlchemy 2.0, Pydantic v2, Alembic, psycopg 3,
   bcrypt, PyJWT, pytest
-- Postgres 17
+- Postgres, hosted on Neon (no Docker)
 - Next.js (App Router, TypeScript), Tailwind, shadcn/ui, SWR
-- Docker Compose
 
 **Spec:** `.claude/plan/campaigns/SPEC.md`. API seam:
 `.claude/contracts/api-surface.md`. Read both before any task.
@@ -59,6 +58,11 @@ are queued and respect quiet hours.
   clever abstractions, comments only where the "why" isn't obvious.
 - **Tests come first** for every behaviour task (this repo's AGENTS.md rule).
 - **Commits** use the user's git identity.
+- **Secrets** (the Neon URLs and the JWT secret) live only in `api/.env`, which
+  is gitignored and filled in by the user. Never print it, never ask the user to
+  paste its values into chat, and never commit it. `api/.env.example` has
+  placeholders. A worktree doesn't have `api/.env`; copy it with
+  `cp "$(git rev-parse --git-common-dir)/../api/.env" api/.env`.
 - **The planning tree is committed and public.** `AGENTS.md`, `CLAUDE.md` and
   `.claude/` show the AI workflow. Never write secrets, tokens or internal URLs
   into them.
@@ -75,12 +79,11 @@ are queued and respect quiet hours.
 
 ```
 ugc-campaigns/
-├── docker-compose.yml           db, api, worker, web
-├── db/init/01-test-db.sql       creates ugc_test
+├── dev.sh                       starts api, worker and web together (Task 9)
 ├── README.md                    submission README (Task 14)
 ├── docs/ai-logs/                exported, cleaned AI chat logs (Task 14)
 ├── api/
-│   ├── Dockerfile, .dockerignore, requirements.txt, requirements-dev.txt, pyproject.toml
+│   ├── .env.example, requirements.txt, requirements-dev.txt, pyproject.toml  (.env is gitignored)
 │   ├── alembic.ini, migrations/ (env.py, versions/)
 │   ├── app/
 │   │   ├── main.py              FastAPI app, CORS, error handler, routers
@@ -154,15 +157,16 @@ ugc-campaigns/
 ### Task 1: Scaffold, database, health check, leak check
 
 **Files:**
-- Create: `.gitignore`, `docker-compose.yml`, `db/init/01-test-db.sql`
-- Create: `api/requirements.txt`, `api/requirements-dev.txt`, `api/pyproject.toml`, `api/.dockerignore`
+- Create: `.gitignore`, `api/.env.example`
+- Exists (gitignored, filled in by the user): `api/.env`
+- Create: `api/requirements.txt`, `api/requirements-dev.txt`, `api/pyproject.toml`
 - Create: `api/app/__init__.py`, `api/app/config.py`, `api/app/db.py`, `api/app/clock.py`, `api/app/errors.py`, `api/app/main.py`
 - Create: `api/app/domain/__init__.py`, `api/app/mocks/__init__.py`, `api/app/services/__init__.py`, `api/app/routers/__init__.py` (all empty)
 - Create: `api/tests/conftest.py`, `api/tests/test_health.py`
 - Run (exists, git-excluded): the leak check (see Global Constraints)
 
 **Interfaces:**
-- Produces: `settings` (`database_url`, `jwt_secret`, `jwt_ttl_hours`, `cors_origins`, `worker_poll_seconds`), `engine`, `SessionLocal`, `Base`, `get_db()`, `utcnow()`, `DomainError(message, status_code=409)` with `.message` and `.status_code`, and FastAPI `app` in `app.main`.
+- Produces: `settings` (`database_url`, `test_database_url`, `jwt_secret`, `jwt_ttl_hours`, `cors_origins`, `worker_poll_seconds`), `engine`, `SessionLocal`, `Base`, `get_db()`, `utcnow()`, `DomainError(message, status_code=409)` with `.message` and `.status_code`, and FastAPI `app` in `app.main`.
 
 - [ ] **Step 1: Repo files**
 
@@ -178,32 +182,16 @@ node_modules/
 .DS_Store
 ```
 
-`docker-compose.yml` (db only for now; Tasks 9 and 10 add services):
-```yaml
-services:
-  db:
-    image: postgres:17
-    environment:
-      POSTGRES_USER: ugc
-      POSTGRES_PASSWORD: ugc
-      POSTGRES_DB: ugc
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ugc"]
-      interval: 2s
-      retries: 30
-
-volumes:
-  pgdata:
-```
-
-`db/init/01-test-db.sql`:
-```sql
-CREATE DATABASE ugc_test;
+`api/.env.example` (committed; the real `api/.env` is gitignored and already
+filled in by the user):
+```dotenv
+# Copy to .env and fill in. Never commit .env; never paste these values anywhere.
+# Neon: use the DIRECT connection string (connection pooling off).
+# Two databases in the same Neon project: one for the app, one only for tests.
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/ugc?sslmode=require
+# Tests wipe every table, so this must be a different database whose name ends in _test.
+TEST_DATABASE_URL=postgresql://USER:PASSWORD@HOST/ugc_test?sslmode=require
+JWT_SECRET=replace-with-a-long-random-string
 ```
 
 `api/requirements.txt` (unpinned here; pinned in Step 4):
@@ -235,23 +223,16 @@ pythonpath = ["."]
 addopts = "-q"
 ```
 
-`api/.dockerignore`:
-```
-.venv
-__pycache__
-.pytest_cache
-```
-
 - [ ] **Step 2: Write the failing test**
 
 `api/tests/conftest.py`:
 ```python
-import os
+from app.config import settings
 
-# Point the app at the test database before anything imports app.config.
-os.environ["DATABASE_URL"] = os.environ.get(
-    "TEST_DATABASE_URL", "postgresql+psycopg://ugc:ugc@localhost:5432/ugc_test"
-)
+# Tests wipe every table, so they must never touch the app's real database.
+if not settings.test_database_url or settings.test_database_url == settings.database_url:
+    raise RuntimeError("Set TEST_DATABASE_URL in api/.env to a separate database whose name ends in _test")
+settings.database_url = settings.test_database_url  # must happen before anything imports app.db
 ```
 
 `api/tests/test_health.py`:
@@ -263,16 +244,30 @@ from app.main import app
 
 def test_health():
     assert TestClient(app).get("/health").json() == {"ok": True}
+
+
+def test_tests_run_on_the_test_database():
+    from sqlalchemy import text
+
+    from app.db import engine
+
+    with engine.connect() as conn:
+        assert conn.execute(text("select current_database()")).scalar().endswith("_test")
 ```
 
-- [ ] **Step 3: Start Postgres and see the test fail**
+- [ ] **Step 3: Check the database settings and see the tests fail**
+
+`api/.env` must exist with `DATABASE_URL` and `TEST_DATABASE_URL` (see
+`.env.example`). In a worktree, copy it first: `cp "$(git rev-parse --git-common-dir)/../api/.env" api/.env`. Check it's there
+with `grep -c '^TEST_DATABASE_URL=postgres' api/.env`, which should print 1.
+Don't print the file. If it's missing or still has placeholders, **stop and ask
+the user to fill it in themselves**.
 
 ```bash
-docker compose up -d db
 cd api && python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/pytest
 ```
-Expected: FAIL with `ModuleNotFoundError: No module named 'app.main'`.
+Expected: FAIL with `ModuleNotFoundError` (there is no `app` package yet).
 
 - [ ] **Step 4: Pin dependencies**
 
@@ -287,17 +282,28 @@ pinned version.
 
 `api/app/config.py`:
 ```python
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: str = "postgresql+psycopg://ugc:ugc@localhost:5432/ugc"
+    database_url: str
+    test_database_url: str | None = None
     jwt_secret: str = "dev-only-secret-change-me"
     jwt_ttl_hours: int = 24 * 7
     cors_origins: list[str] = ["http://localhost:3000"]
     worker_poll_seconds: float = 3.0
+
+    @field_validator("database_url", "test_database_url")
+    @classmethod
+    def use_psycopg_driver(cls, url: str | None) -> str | None:
+        # Neon hands out postgresql:// URLs; SQLAlchemy has to be told to use psycopg 3.
+        for prefix in ("postgresql://", "postgres://"):
+            if url and url.startswith(prefix):
+                return "postgresql+psycopg://" + url.removeprefix(prefix)
+        return url
 
 
 settings = Settings()
@@ -310,7 +316,8 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.config import settings
 
-engine = create_engine(settings.database_url)
+# Neon suspends idle databases and drops their connections; pre-ping swaps dead ones out.
+engine = create_engine(settings.database_url, pool_pre_ping=True)
 SessionLocal = sessionmaker(engine)
 
 
@@ -377,8 +384,8 @@ def health():
 
 - [ ] **Step 6: Run the test and see it pass**
 
-Run: `cd api && .venv/bin/pytest`. Expected: `1 passed`.
-Also run `docker compose exec db psql -U ugc -lqt | cut -d'|' -f1 | grep -w ugc_test`, which should print `ugc_test`.
+Run: `cd api && .venv/bin/pytest`. Expected: `2 passed` (the health check, and
+the guard that tests really run against the `_test` database).
 
 - [ ] **Step 7: Leak check.** The script already exists (written and
   self-tested during planning; git-excluded). **Run it; never open, print or
@@ -388,8 +395,8 @@ Also run `docker compose exec db psql -U ugc -lqt | cut -d'|' -f1 | grep -w ugc_
 - [ ] **Step 8: Commit, then ask about GitHub**
 
 ```bash
-git add .gitignore docker-compose.yml db api .claude
-git status --short   # must NOT list .claude/leak-check.sh
+git add .gitignore api .claude
+git status --short   # must NOT list api/.env or .claude/leak-check.sh
 git commit -m "chore: scaffold FastAPI api with Postgres and health check"
 git push origin HEAD:main
 ```
@@ -843,7 +850,7 @@ Then:
 ```bash
 .venv/bin/alembic revision --autogenerate -m "initial schema"
 .venv/bin/alembic upgrade head
-docker compose exec db psql -U ugc -c '\dt'
+.venv/bin/python -c "from sqlalchemy import inspect; from app.db import engine; print(sorted(inspect(engine).get_table_names()))"
 ```
 Expected: ten tables plus `alembic_version`. Open the generated revision and
 check that every CHECK constraint is present.
@@ -3112,11 +3119,10 @@ git add api && git commit -m "feat(api): notification sending with IST quiet hou
 
 ---
 
-### Task 9: Seed data, full-stack compose for api and worker, HTTP flow test, repo map
+### Task 9: Seed data, one-command dev runner, HTTP flow test, repo map
 
 **Files:**
-- Create: `api/Dockerfile`, `api/app/seed.py`, `api/tests/test_api_flow.py`
-- Modify: `docker-compose.yml`
+- Create: `api/app/seed.py`, `api/tests/test_api_flow.py`, `dev.sh`
 - Create: `.claude/ugc-campaigns/AGENTS.md`, `.claude/ugc-campaigns/CLAUDE.md`, `.claude/ugc-campaigns/STRUCTURE.md`
 - Modify: `.claude/contracts/api-surface.md` (stamp), root `AGENTS.md` (Repos row)
 
@@ -3243,41 +3249,24 @@ if __name__ == "__main__":
 Run against the dev DB: `cd api && .venv/bin/python -m app.seed`, twice. The
 second run should print "Demo data already present".
 
-- [ ] **Step 3: Containers**
+- [ ] **Step 3: One-command local run**
 
-`api/Dockerfile`:
-```dockerfile
-FROM python:3.14-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
+`dev.sh` (repo root; `chmod +x dev.sh`):
+```bash
+#!/usr/bin/env bash
+# Migrates and seeds, then starts the API, the worker and (once it exists) the web app.
+# Ctrl-C stops them all.
+set -euo pipefail
+cd "$(dirname "$0")"
+trap 'kill 0' EXIT
+(cd api && .venv/bin/alembic upgrade head && .venv/bin/python -m app.seed)
+(cd api && .venv/bin/uvicorn app.main:app --reload --port 8000) &
+(cd api && .venv/bin/python -m app.worker) &
+if [ -d web ]; then (cd web && npm run dev); else wait; fi
 ```
-
-Add to `docker-compose.yml` under `services:`:
-```yaml
-  api:
-    build: ./api
-    environment: &api-env
-      DATABASE_URL: postgresql+psycopg://ugc:ugc@db:5432/ugc
-      JWT_SECRET: local-demo-secret
-    command: sh -c "alembic upgrade head && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"
-    ports:
-      - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
-
-  worker:
-    build: ./api
-    environment: *api-env
-    command: python -m app.worker
-    depends_on:
-      - api
-```
-Run: `docker compose up --build -d api worker && sleep 8 && curl -s localhost:8000/health && docker compose logs worker | tail -5`.
-Expected: `{"ok":true}` and "worker started". (The worker may log a failed tick
-before the migrations finish; it retries on the next tick.)
+Run `./dev.sh` in the background, then `curl -s localhost:8000/health`.
+Expected: `{"ok":true}`, and the output shows "worker started". Stop it
+afterwards.
 
 - [ ] **Step 4: Map the repo** (repo-setup step 2, now that code exists)
 
@@ -3297,7 +3286,7 @@ Update the Repos row in the root `AGENTS.md`.
 - [ ] **Step 5: Full suite, then commit**
 ```bash
 cd api && .venv/bin/pytest && cd .. && "$(git rev-parse --git-common-dir)/../.claude/leak-check.sh"
-git add api docker-compose.yml .claude AGENTS.md && git commit -m "feat: demo seed, api and worker containers, end-to-end HTTP flow test"
+git add api dev.sh .claude AGENTS.md && git commit -m "feat: demo seed, one-command dev runner, end-to-end HTTP flow test"
 git push origin HEAD:main
 ```
 
@@ -3306,11 +3295,11 @@ git push origin HEAD:main
 ### Task 10: Web foundation: scaffold, visual direction (ui-craft 0–1), auth screens
 
 **Files:**
-- Create: `web/` (create-next-app), `web/DESIGN.md`, `web/Dockerfile`, `web/.dockerignore`, `web/.env.local.example`
+- Create: `web/` (create-next-app), `web/DESIGN.md`, `web/.env.local.example`
 - Create: `web/src/lib/{token,api,auth,types,money,time,instagram,next-step}.ts`
 - Create: `web/src/components/{require-role,app-shell,status-pill}.tsx`
 - Create: `web/src/app/{login,signup}/page.tsx`, `web/src/app/demo/[role]/page.tsx`, `web/src/app/{brand,creator,inbox,settings}/layout.tsx`
-- Modify: `web/src/app/{layout.tsx,page.tsx,globals.css}`, `docker-compose.yml`
+- Modify: `web/src/app/{layout.tsx,page.tsx,globals.css}`
 
 **Interfaces:**
 - Consumes: the HTTP contract (`.claude/contracts/api-surface.md`).
@@ -3603,41 +3592,19 @@ export function brandNextStep(a: Application): Step {
     - It saves the token and redirects to `?next=` or the role's home.
     - It is used by the demo buttons and by ui-craft's audit.
 
-- [ ] **Step 8: Web container.** Write `web/Dockerfile`:
-```dockerfile
-FROM node:22-alpine
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-COPY . .
-ARG NEXT_PUBLIC_API_URL=http://localhost:8000
-ARG NEXT_PUBLIC_DEMO=1
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_DEMO=$NEXT_PUBLIC_DEMO
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-Its `.dockerignore` should list `node_modules` and `.next`. Add this to compose:
-```yaml
-  web:
-    build: ./web
-    ports:
-      - "3000:3000"
-    depends_on:
-      - api
-```
-
-- [ ] **Step 9: Verify**
+- [ ] **Step 8: Verify**
+  - create-next-app's `web/.gitignore` ignores `.env*`. Add the line
+    `!.env.local.example` to it so the example gets committed.
   - `cd web && npm run lint && npm run build` succeeds.
-  - Run `npm run dev` with the API running locally. Then:
+  - Run `./dev.sh` in the background (it now starts the web app too). Then:
     - sign up a new creator and land on `/creator`;
     - log out;
     - "Try the demo as a brand" lands on `/brand`;
     - visiting `/creator` as the brand redirects back to `/brand`.
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 9: Commit**
 ```bash
-git add web docker-compose.yml && git commit -m "feat(web): Next.js foundation, visual direction, auth and demo login"
+git add web .claude && git commit -m "feat(web): Next.js foundation, visual direction, auth and demo login"
 ```
 
 ---
@@ -3901,8 +3868,8 @@ git add web && git commit -m "feat(web): creator explore, applications with next
   - When there's no phone, the WhatsApp toggle still works, but the helper
     text says "Add a phone number to receive WhatsApp messages".
 
-- [ ] **Step 3: ui-craft Step 6, the scans.** Run with the full stack up
-  (`docker compose up` or the local dev servers) and the seed loaded:
+- [ ] **Step 3: ui-craft Step 6, the scans.** Run with `./dev.sh` running in
+  the background (it seeds the demo data):
 ```bash
 cd ~/.claude/skills/ui-craft/scripts
 node audit.mjs http://localhost:3000 /login /signup "/demo/brand?next=/brand" "/demo/brand?next=/brand/campaigns/new" "/demo/brand?next=/brand/campaigns/1" "/demo/creator?next=/creator" "/demo/creator?next=/creator/campaigns" "/demo/creator?next=/creator/wallet" "/demo/creator?next=/inbox" "/demo/creator?next=/settings"
@@ -3937,15 +3904,23 @@ git add web && git commit -m "feat(web): notification inbox and settings; ui-cra
 
 - [ ] **Step 1: README.md** with these sections, in this order:
   1. **What this is** (two sentences) and **Run it**:
-     - `docker compose up --build`, then http://localhost:3000. API docs are at
-       http://localhost:8000/docs.
+     - Setup:
+       1. Get a Postgres URL. A free Neon project works: create two databases,
+          one of them ending in `_test`.
+       2. `cp api/.env.example api/.env` and fill it in.
+       3. `cd api && python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt`
+       4. `cd web && npm ci`
+
+       Then run `./dev.sh` from the repo root and open http://localhost:3000.
+       API docs are at http://localhost:8000/docs.
      - The demo accounts (brand@ugc-demo.in, creator@ugc-demo.in,
        ravi@ugc-demo.in and meera@ugc-demo.in, all with `demo-pass-123`), or
        the demo buttons on the login page.
      - How to trigger every mock branch: a UPI ID starting with `fail` fails;
        Instagram links whose shortcode starts with `missing` or `private`.
      - How to see quiet hours: the Inbox shows held messages.
-     - Local dev without Docker: the venv, `alembic upgrade head`, `uvicorn`,
+     - What `dev.sh` runs, for anyone who prefers separate terminals:
+       `alembic upgrade head`, `python -m app.seed`, `uvicorn`,
        `python -m app.worker`, `npm run dev`.
   2. **Assumptions:** the 12 numbered assumptions from SPEC.md.
   3. **Key decisions and why.** One short paragraph each:
@@ -3965,7 +3940,10 @@ git add web && git commit -m "feat(web): notification inbox and settings; ui-cra
      - deterministic mocks;
      - sync SQLAlchemy for readability;
      - JWT Bearer, usable by web and mobile alike;
-     - tests on real Postgres.
+     - tests on real Postgres (a separate `_test` database, guarded so tests
+       can never wipe the app's data);
+     - hosted Postgres (Neon) instead of Docker: nothing to install beyond
+       Python and Node, and any Postgres URL works.
   4. **What we'd do differently from the existing flow:** the Task 0 findings
      next to our friction reducers. Show a table with "Implemented ✓" or "Next"
      against each.
@@ -3987,8 +3965,8 @@ git add web && git commit -m "feat(web): notification inbox and settings; ui-cra
        manual runs);
      - bcrypt's 72-byte password limit;
      - only one worker process has been tried.
-  6. **Tests:** how to run them (`docker compose up -d db`, then
-     `cd api && .venv/bin/pytest`). Name the **three riskiest parts and why**:
+  6. **Tests:** how to run them (`cd api && .venv/bin/pytest`; this needs
+     `TEST_DATABASE_URL` in `api/.env`). Name the **three riskiest parts and why**:
      - money (mistakes are irreversible and involve tax);
      - slot and budget reservation under concurrency (races never show up in
        manual testing);
@@ -4027,8 +4005,12 @@ git add web && git commit -m "feat(web): notification inbox and settings; ui-cra
 "$(git rev-parse --git-common-dir)/../.claude/leak-check.sh"
 cd api && .venv/bin/pytest && cd ..
 cd web && npm run lint && npm run build && cd ..
-rm -rf /tmp/ugc-verify && git clone . /tmp/ugc-verify && cd /tmp/ugc-verify
-docker compose down -v; docker compose up --build -d && sleep 20
+rm -rf /tmp/ugc-verify && git clone . /tmp/ugc-verify
+cp api/.env /tmp/ugc-verify/api/.env   # local only; never committed
+cd /tmp/ugc-verify/api && python3 -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt && .venv/bin/pytest
+.venv/bin/alembic downgrade base   # deliberately empties the dev database, so the run starts from nothing
+cd ../web && npm ci && cd ..
+./dev.sh   # in the background; it migrates, seeds and starts everything
 curl -s localhost:8000/health
 ```
   Use the scratchpad directory instead of `/tmp` if one is available.

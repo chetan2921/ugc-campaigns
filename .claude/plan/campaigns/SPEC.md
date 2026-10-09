@@ -283,7 +283,7 @@ Refine this list after Task 0 (the ugccontent.in walkthrough).
    go out at 09:00 IST, and missed deadlines expire.
 3. **Web.** Done when a reviewer can log in as the demo brand and the demo
    creator and do every step of the brief from the UI.
-4. **Submission.** Done when `docker compose up` on a clean clone works, the
+4. **Submission.** Done when a clean clone runs from the README steps (`./dev.sh`), the
    README has all four sections, the AI logs are in `docs/ai-logs/`, the leak
    check passes, and the repo is pushed.
 
@@ -297,11 +297,11 @@ frontend unit tests.
 |---|---|---|
 | Front end | Next.js (App Router, TypeScript), Tailwind, shadcn/ui, SWR | Asked for by the author. A thin client over the API. SWR handles loading and error states with very little code. |
 | Back end | FastAPI, sync SQLAlchemy 2.0, Pydantic v2, Alembic | The company's stack. Sync code is simpler to explain, and FastAPI runs sync routes in a threadpool. |
-| Data | Postgres 17 | Transactions, row locks, conditional updates, CHECK constraints and `SKIP LOCKED` queues: the risky parts rely on all of these. |
+| Data | Postgres, hosted on Neon (free tier) | Transactions, row locks, conditional updates, CHECK constraints and `SKIP LOCKED` queues: the risky parts rely on all of these. Hosted, so there's no Docker; any Postgres URL works. MongoDB was considered and turned down because the payout and reservation logic depends on these features. |
 | Queue / worker | A Postgres table plus a `python -m app.worker` polling loop | Durable, written in the same transaction as the change, supports scheduled sends, and needs no Redis or Celery. |
 | Auth | Email + bcrypt, JWT (HS256, 7 days) as a Bearer token | The same token works for the web app and a future Flutter app. |
-| Tests | pytest against a real Postgres `ugc_test` database | Concurrency and constraints can't be tested on SQLite or with mocks. |
-| Hosting | `docker compose up` (db, api, worker, web) | The brief asks for a repo link. One command lets reviewers run it. |
+| Tests | pytest against a separate Neon database whose name ends in `_test` | Concurrency and constraints can't be tested on SQLite or with mocks. conftest refuses to run against anything else, because tests wipe every table. |
+| Running it | `./dev.sh` migrates, seeds, and starts the api, worker and web against the URLs in `api/.env` (gitignored) | The brief asks for a repo link. After a short setup, one command lets reviewers run everything. |
 
 ## Architecture
 

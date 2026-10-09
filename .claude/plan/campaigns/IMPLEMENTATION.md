@@ -7,11 +7,11 @@ runs in a fresh session: plan Task 1 (scaffold), with Task 0 (the UGCIndia
 walkthrough) in parallel. Tasks and code are in `PLAN.md`.
 
 ### In flight: Task 1, scaffold
-- [ ] repo files (.gitignore, docker-compose with db, db/init test DB)
-- [ ] failing `test_health`, Postgres up, venv installed
+- [ ] repo files (.gitignore, api/.env.example). `api/.env` (filled in by the user, gitignored) has both Neon URLs
+- [ ] failing `test_health`, `api/.env` present, venv installed
 - [ ] pin dependencies
 - [ ] config, db, clock, errors, main
-- [ ] `test_health` green, `ugc_test` exists
+- [ ] `test_health` green, including the check that tests run on the `_test` database
 - [ ] leak check passes (see AGENTS.md for the command)
 - [ ] commit, then `git push origin HEAD:main` (the repo already exists and is public). Full suite green, then stop here.
 
@@ -24,7 +24,7 @@ walkthrough) in parallel. Tasks and code are in `PLAN.md`.
 - 6. Submit, review, payout
 - 7. Withdrawals, mock payout provider, worker v1
 - 8. Notification sending, deadlines, worker v2
-- 9. Seed, api/worker containers, HTTP flow test, repo map. **Milestone 1 and 2 done.**
+- 9. Seed, `dev.sh` one-command runner, HTTP flow test, repo map. **Milestone 1 and 2 done.**
 - 10. Web foundation, ui-craft direction, auth
 - 11. Brand screens
 - 12. Creator screens

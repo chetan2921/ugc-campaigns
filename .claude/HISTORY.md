@@ -5,3 +5,4 @@
     fee, GST and TDS appear as deductions on the payout bill (the author's
     call). A pre-computed net shown up front was the alternative.
 - 2026-10-10 repo: the planning tree (AGENTS.md, CLAUDE.md, .claude/) is committed and the GitHub repo is public, both at the author's request, to show the AI workflow. Only the private leak-check script stays git-excluded. The build continues in a fresh session.
+- 2026-10-10 database: hosted Postgres on Neon, replacing Postgres in Docker. The author doesn't want Docker, and MongoDB was also considered. Kept Postgres because the payout and slot-reservation logic depends on transactions, CHECK constraints and conditional updates; Neon gives a connection URL like Atlas would. Tests use a separate `_test` database and refuse to run otherwise. `dev.sh` replaces docker compose.
