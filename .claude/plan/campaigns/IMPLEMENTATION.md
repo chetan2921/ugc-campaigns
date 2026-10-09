@@ -1,13 +1,12 @@
 # campaigns implementation
 
 ## Now
-Task 3: Domain core: money, IST quiet hours, state table. Steps and code are in `PLAN.md`.
+Task 4: Apply, approve with reservation, decline, withdraw. Steps and code are in `PLAN.md`.
 
-### In flight: Task 3, domain core
-- (see PLAN.md Task 3 checklist when starting)
+### In flight: Task 4, apply and reservation
+- (see PLAN.md Task 4 checklist when starting)
 
 ## Next
-- 4. Apply / approve with atomic reservation / decline / withdraw
 - 5. Campaign rules, presenters, routes
 - 6. Submit, review, payout
 - 7. Withdrawals, mock payout provider, worker v1
@@ -23,6 +22,7 @@ Cut line if time runs short: polish in Task 13 (the slop-scan follow-ups)
 goes first. Tasks 1–12 and 14 are required by the brief.
 
 ## Done
+- 2026-10-10 Task 3: payout maths, IST quiet hours, application state table. Money, notification and state tests green.
 - 2026-10-10 Task 2: ten-table data model, Alembic initial schema, signup/login with roles. Auth tests green.
 - 2026-10-10 Task 1: FastAPI scaffold, config/db/clock/errors/main, health check,
   pinned requirements, conftest guard for `_test` database, leak check green.

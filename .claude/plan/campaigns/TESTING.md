@@ -12,6 +12,9 @@
 Fill these in as tasks land.
 - health and test-db guard: `api/tests/test_health.py`
 - auth signup/login over HTTP: `api/tests/test_auth.py` (factories in `api/tests/factories.py`)
+- payout bill and INR format: `api/tests/test_money.py`
+- quiet hours (`ist()` helper): `api/tests/test_notifications.py`
+- application state table: `api/tests/test_states.py`
 - service-level test with factories: `api/tests/test_reservation.py`
 - concurrency test: `test_parallel_approvals_never_overfill_the_last_slot`
 - HTTP test with auth headers: `api/tests/test_api_flow.py`
