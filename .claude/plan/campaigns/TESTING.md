@@ -38,7 +38,13 @@ Fill these in as tasks land.
 - **After an expected `DomainError`,** call `db.rollback()` before reading more
   from the same session.
 - **Re-run the `-k parallel` tests five times** whenever reservation, payout or
-  withdrawal code changes.
+  withdrawal code changes. Task 4's last-slot test passed all five runs
+  (about one minute each against Neon; that wait is the remote round-trips,
+  not a hang).
+- **Slot updates use `synchronize_session=False`.** This session sees the new
+  counts after its own `commit`, or after `expire_all()` when another session
+  wrote them. `run_concurrently` returns `"ok"` or the `DomainError` message;
+  it does not re-raise that error into the caller.
 
 ## Inventory (planned)
 | Area | Unit | Integration (service + DB) | E2E (HTTP) | Notes |

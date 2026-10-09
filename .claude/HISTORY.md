@@ -10,3 +10,4 @@
 - 2026-10-10 Task 1: api scaffold (FastAPI, SQLAlchemy/psycopg, settings, `/health`, conftest `_test` guard), pinned deps, pytest and leak check green; not pushed (controller reviews first).
 - 2026-10-10 Task 2: ten-table data model, Alembic initial schema, signup/login with roles; auth and health tests green. Not pushed.
 - 2026-10-10 Task 3: payout maths, IST quiet hours and the application state table; domain tests green with health and auth. Not pushed.
+- 2026-10-10 Task 4: apply, approve with atomic slot and budget reservation, decline, withdraw; reservation tests green, including five parallel last-slot runs. Not pushed.

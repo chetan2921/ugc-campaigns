@@ -1,7 +1,12 @@
 import itertools
-from datetime import datetime, timezone
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta, timezone
 
-from app.models import User, Wallet
+from app.db import SessionLocal
+from app.errors import DomainError
+from app.models import Campaign, User, Wallet
+from app.services import applications
 
 NOW = datetime(2026, 10, 12, 6, 30, tzinfo=timezone.utc)  # 12:00 IST, outside quiet hours
 FEE = 1_000_000  # ₹10,000 in paise
@@ -30,3 +35,41 @@ def signup(client, role: str) -> dict[str, str]:
         body["instagram_handle"] = f"creator.{n}"
     token = client.post("/auth/signup", json=body).json()["token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+def make_campaign(db, brand: User, *, fee: int = FEE, slots: int = 3, budget: int | None = None, now=NOW) -> Campaign:
+    campaign = Campaign(
+        brand_id=brand.id, title="Monsoon snack reels", description="", fee_paise=fee, slots=slots,
+        budget_paise=budget or fee * slots, apply_deadline=now + timedelta(days=3),
+        submit_deadline=now + timedelta(days=10),
+    )
+    db.add(campaign)
+    db.commit()
+    return campaign
+
+
+def applied(db, campaign: Campaign, creator: User | None = None):
+    return applications.apply(db, creator or make_user(db, "creator"), campaign.id, None, NOW)
+
+
+def approved(db, campaign: Campaign):
+    app = applied(db, campaign)
+    return applications.approve(db, campaign.brand, app.id, NOW)
+
+
+def run_concurrently(*calls) -> list[str]:
+    """Run each call(session) in its own thread and DB session, all released at the same moment.
+    Returns "ok" or the DomainError message for each call."""
+    barrier = threading.Barrier(len(calls))
+
+    def run(call):
+        with SessionLocal() as session:
+            barrier.wait()
+            try:
+                call(session)
+                return "ok"
+            except DomainError as error:
+                return error.message
+
+    with ThreadPoolExecutor(len(calls)) as pool:
+        return list(pool.map(run, calls))
