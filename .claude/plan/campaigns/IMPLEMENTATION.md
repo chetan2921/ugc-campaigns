@@ -3,8 +3,8 @@
 ## Now
 Planning is done. The spec, plan, contract and this tree are committed to the
 public repo https://github.com/chetan2921/ugc-campaigns. No code yet. The build
-runs in a fresh session: plan Task 1 (scaffold), with Task 0 (the UGCIndia
-walkthrough) in parallel. Tasks and code are in `PLAN.md`.
+runs in a fresh session: plan Task 1 (scaffold). Task 0 (the public-site
+walkthrough) is done. Tasks and code are in `PLAN.md`.
 
 ### In flight: Task 1, scaffold
 - [ ] repo files (.gitignore, api/.env.example). `api/.env` (filled in by the user, gitignored) has both Neon URLs
@@ -16,7 +16,6 @@ walkthrough) in parallel. Tasks and code are in `PLAN.md`.
 - [ ] commit, then `git push origin HEAD:main` (the repo already exists and is public). Full suite green, then stop here.
 
 ## Next
-- 0. UGCIndia flow walkthrough (README input)
 - 2. Data model, migration, signup/login
 - 3. Domain core: money, IST quiet hours, state table
 - 4. Apply / approve with atomic reservation / decline / withdraw
@@ -35,5 +34,8 @@ Cut line if time runs short: polish in Task 13 (the slop-scan follow-ups)
 goes first. Tasks 1–12 and 14 are required by the brief.
 
 ## Done
+- 2026-10-10 UGCIndia public-site walkthrough. Notes in
+  `.claude/plan/campaigns/ugcindia-notes.md`. Logged-in screens were not
+  opened. README-only ideas updated in the spec; the build scope did not move.
 - 2026-10-10 Planning. Brief analysed, gaps found, assumptions agreed with the
   user, spec/plan/contract written.

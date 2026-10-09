@@ -266,14 +266,20 @@ send nothing.
 8. The Instagram link check as you type, plus the mock post lookup.
 
 **README only (we would do these next):**
-- Review a draft before it's posted publicly, so creators don't end up with a
-  rejected public post.
+- Review a draft on the platform before it has to be public, and let a
+  campaign be file-only when the brand does not need a post on the creator's
+  account.
+- Name the usage on the campaign before anyone applies: organic, paid ads, or
+  a whitelist, and for how long.
+- Let a revision note point at a moment in the video.
 - Auto-approve if the brand doesn't review within 72 hours.
 - One 9 AM digest instead of many separate messages.
 - Fill freed slots automatically from a waitlist.
 - Deadline reminders.
 
-Refine this list after Task 0 (the ugccontent.in walkthrough).
+Task 0 notes: `.claude/plan/campaigns/ugcindia-notes.md`. Nothing above changes
+what this slice builds. A brand wallet, subscriptions, creator tiers, and
+invites stay out of scope.
 
 ## Milestones
 
