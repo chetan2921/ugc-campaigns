@@ -3,7 +3,7 @@
 ## Run
 | Part | Command |
 |------|---------|
-| api | `cd api && .venv/bin/pytest` (uses `TEST_DATABASE_URL` from `api/.env`: a separate Neon database ending in `_test`) |
+| api | `cd api && .venv/bin/pytest` (uses `TEST_DATABASE_URL` from `api/.env`: a separate Neon database ending in `_test`; dev deps include `httpx2` so Starlette TestClient stays warning-free) |
 | api, one suite | `.venv/bin/pytest tests/test_money.py -k parallel` |
 | web | `cd web && npm run lint && npm run build` |
 | web UI checks | ui-craft `audit.mjs` and `slop-scan.mjs` against the running app (PLAN Task 13) |
