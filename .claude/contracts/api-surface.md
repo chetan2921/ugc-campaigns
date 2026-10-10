@@ -99,4 +99,4 @@ NotificationOut { id, channel: "email"|"whatsapp", event, body,
 Application statuses: `applied, approved, declined, withdrawn, expired,
 submitted, revision_requested, paid, rejected`.
 
-<!-- mapped: .@PENDINGSHA paths: api/app/schemas.py,api/app/routers -->
+<!-- mapped: .@09f5afd paths: api/app/schemas.py,api/app/routers -->

@@ -60,4 +60,4 @@ Run from `api/` with the venv, except `./dev.sh`, which is the repo root.
 Secrets stay in `api/.env`. Tests refuse to run unless `TEST_DATABASE_URL`
 points at a different database whose name ends in `_test`.
 
-<!-- mapped: .@PENDINGSHA paths: api/app,api/tests -->
+<!-- mapped: .@09f5afd paths: api/app,api/tests -->
