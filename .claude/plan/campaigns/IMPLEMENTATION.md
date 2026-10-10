@@ -1,10 +1,9 @@
 # campaigns implementation
 
 ## Now
-Task 7: Withdrawals, mock payout provider, worker v1. Steps and code are in `PLAN.md`.
+Task 8: Sending notifications, quiet hours at send time, deadlines. Steps and code are in `PLAN.md`.
 
 ## Next
-- 8. Notification sending, deadlines, worker v2
 - 9. Seed, `dev.sh` one-command runner, HTTP flow test, repo map. **Milestone 1 and 2 done.**
 - 10. Web foundation, ui-craft direction, auth
 - 11. Brand screens
@@ -16,6 +15,7 @@ Cut line if time runs short: polish in Task 13 (the slop-scan follow-ups)
 goes first. Tasks 1–12 and 14 are required by the brief.
 
 ## Done
+- 2026-10-10 Task 7: wallet withdrawals, mock payout provider, and worker v1. A failed payout refunds the wallet once. Money tests green, including five parallel runs.
 - 2026-10-10 Task 6: submit an Instagram post, review it (revise, reject, or pay), and credit the net to the creator's wallet. Submission, money, and reservation tests green, including five parallel single-post payout runs.
 - 2026-10-10 Task 5: campaign create/edit/cancel rules, presenters, and campaign/application routes. Campaign-rule tests green, including cancel keeping approved creators.
 - 2026-10-10 Task 4: apply, approve with atomic slot and budget reservation, decline, withdraw. Reservation tests green, including five parallel last-slot runs.

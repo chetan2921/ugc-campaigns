@@ -18,3 +18,4 @@
 - 2026-10-10 Task 6: Instagram submit, review (revise, reject, pay), and wallet credit of the net. Submission, money, and reservation tests green, including five parallel payout runs. Not pushed.
   Submit and review lock via `_lock_campaign_then_application`, chosen over `lock_application`.
   `lock_application` locks only the application row. Paying or rejecting then updates the campaign, and that order deadlocks with cancel, which locks the campaign first.
+- 2026-10-10 Task 7: wallet withdrawals, mock payout provider (a UPI id starting with `fail` is declined), and worker v1. A failed payout refunds the wallet once. Money tests green, including five parallel runs. Not pushed.

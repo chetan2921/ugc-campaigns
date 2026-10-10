@@ -3,10 +3,12 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import func, select
+
 from app.db import SessionLocal
 from app.errors import DomainError
-from app.models import Campaign, User, Wallet
-from app.services import applications, submissions
+from app.models import Campaign, LedgerEntry, User, Wallet
+from app.services import applications, submissions, wallet
 
 NOW = datetime(2026, 10, 12, 6, 30, tzinfo=timezone.utc)  # 12:00 IST, outside quiet hours
 FEE = 1_000_000  # ₹10,000 in paise
@@ -65,6 +67,17 @@ def submitted(db, campaign: Campaign):
 def paid(db, campaign: Campaign):
     app = submitted(db, campaign)
     return submissions.review(db, campaign.brand, app.id, "approve", None, NOW)
+
+
+def fund(db, user: User, amount_paise: int) -> None:
+    wallet.credit(db, user.id, amount_paise, "payout", NOW)
+    db.commit()
+
+
+def assert_ledger_matches(db, user_id: int) -> None:
+    db.expire_all()
+    total = db.scalar(select(func.coalesce(func.sum(LedgerEntry.amount_paise), 0)).where(LedgerEntry.user_id == user_id))
+    assert total == db.get(Wallet, user_id).balance_paise
 
 
 def run_concurrently(*calls) -> list[str]:

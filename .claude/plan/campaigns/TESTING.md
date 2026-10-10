@@ -23,6 +23,10 @@ Fill these in as tasks land.
 - submit, revise, and reject rules: `api/tests/test_submissions.py`
 - payout credits the net once: `test_approving_a_post_credits_the_net_amount`, `test_approving_twice_pays_once`
 - parallel payout of one post: `test_parallel_approvals_of_one_post_pay_once`
+- withdrawal holds the money and remembers the UPI ID: `test_withdrawal_holds_the_money_straight_away`
+- withdrawal overdraw and missing UPI: `test_cannot_withdraw_more_than_the_balance`, `test_withdrawal_needs_a_upi_id`
+- parallel withdrawals cannot overdraw: `test_parallel_withdrawals_cannot_overdraw`
+- failed payout refunds once: `test_failed_withdrawal_puts_the_money_back`, `test_settled_withdrawals_are_never_processed_twice`
 - reject frees the slot: `test_rejecting_a_post_frees_the_slot`
 - HTTP test with auth headers: `api/tests/test_api_flow.py`
 
@@ -53,6 +57,12 @@ Fill these in as tasks land.
   not a hang). Task 6 ran the same `-k parallel` set five times (last-slot
   plus one-post payout): 2 passed each run, in 92s, 96s, 93s, 90s, and 155s.
   The slow fifth run still passed; the wait is Neon, not a deadlock.
+  Task 7 ran the same `-k parallel` set five times (last-slot, one-post payout,
+  and withdrawal overdraw): 3 passed each run, in 84.52s, 84.52s, 83.16s,
+  84.40s, and 85.88s.
+- **One pytest process at a time** against the Neon `_test` database. A second
+  process's `drop_all` or `TRUNCATE` deadlocks with the first and can make
+  passing tests look like missing tables.
 - **The same-post check is a read, not a unique index.** Two applications can
   still submit one URL at the same moment. The sequential test does not catch
   that race.

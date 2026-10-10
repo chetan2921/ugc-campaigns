@@ -3,9 +3,10 @@ from sqlalchemy import func, select
 
 from app.domain.money import format_inr, payout_breakdown
 from app.errors import DomainError
-from app.models import LedgerEntry, Payout, User, Wallet
-from app.services import submissions
-from tests.factories import NOW, make_campaign, make_user, paid, run_concurrently, submitted
+from app.mocks.payouts import MockPayoutProvider
+from app.models import LedgerEntry, Notification, Payout, User, Wallet, Withdrawal
+from app.services import submissions, wallet
+from tests.factories import NOW, assert_ledger_matches, fund, make_campaign, make_user, paid, run_concurrently, submitted
 
 
 def test_ten_thousand_rupee_fee_bill():
@@ -72,3 +73,73 @@ def test_parallel_approvals_of_one_post_pay_once(db):
     db.expire_all()
     assert db.get(Wallet, creator_id).balance_paise == 873_180
     assert db.scalar(select(func.count()).select_from(Payout)) == 1
+
+
+def test_withdrawal_holds_the_money_straight_away(db):
+    creator = make_user(db, "creator")
+    fund(db, creator, 500_000)
+    w = wallet.request_withdrawal(db, creator, 200_000, "asha@okbank", NOW)
+    assert w.status == "processing"
+    assert db.get(Wallet, creator.id).balance_paise == 300_000
+    assert creator.upi_id == "asha@okbank"  # remembered for next time
+    assert_ledger_matches(db, creator.id)
+
+
+def test_cannot_withdraw_more_than_the_balance(db):
+    creator = make_user(db, "creator")
+    fund(db, creator, 100_000)
+    with pytest.raises(DomainError, match="more than your wallet balance"):
+        wallet.request_withdrawal(db, creator, 100_001, "asha@okbank", NOW)
+
+
+def test_withdrawal_needs_a_upi_id(db):
+    creator = make_user(db, "creator")
+    fund(db, creator, 100_000)
+    with pytest.raises(DomainError, match="UPI"):
+        wallet.request_withdrawal(db, creator, 50_000, None, NOW)
+
+
+def test_parallel_withdrawals_cannot_overdraw(db):
+    creator = make_user(db, "creator", upi_id="asha@okbank")
+    fund(db, creator, 1_000_000)
+    creator_id = creator.id
+    results = run_concurrently(
+        *[lambda s: wallet.request_withdrawal(s, s.get(User, creator_id), 600_000, None, NOW)] * 2
+    )
+    assert results.count("ok") == 1
+    db.expire_all()
+    assert db.get(Wallet, creator_id).balance_paise == 400_000
+    assert_ledger_matches(db, creator_id)
+
+
+def test_successful_withdrawal_settles_and_notifies(db):
+    creator = make_user(db, "creator")
+    fund(db, creator, 500_000)
+    wallet.request_withdrawal(db, creator, 500_000, "asha@okbank", NOW)
+    assert wallet.process_withdrawals(db, MockPayoutProvider(), NOW) == 1
+    w = db.scalars(select(Withdrawal)).one()
+    assert (w.status, w.provider_ref) == ("succeeded", f"mock_wd_{w.id}")
+    assert db.get(Wallet, creator.id).balance_paise == 0
+    assert db.scalars(select(Notification.event).where(Notification.user_id == creator.id)).first() == "withdrawal_succeeded"
+
+
+def test_failed_withdrawal_puts_the_money_back(db):
+    creator = make_user(db, "creator")
+    fund(db, creator, 500_000)
+    wallet.request_withdrawal(db, creator, 500_000, "fail@okbank", NOW)
+    wallet.process_withdrawals(db, MockPayoutProvider(), NOW)
+    w = db.scalars(select(Withdrawal)).one()
+    assert w.status == "failed" and w.failure_reason
+    assert db.get(Wallet, creator.id).balance_paise == 500_000
+    kinds = db.scalars(select(LedgerEntry.kind).where(LedgerEntry.user_id == creator.id).order_by(LedgerEntry.id)).all()
+    assert kinds == ["payout", "withdrawal", "refund"]
+    assert_ledger_matches(db, creator.id)
+
+
+def test_settled_withdrawals_are_never_processed_twice(db):
+    creator = make_user(db, "creator")
+    fund(db, creator, 500_000)
+    wallet.request_withdrawal(db, creator, 500_000, "fail@okbank", NOW)
+    wallet.process_withdrawals(db, MockPayoutProvider(), NOW)
+    assert wallet.process_withdrawals(db, MockPayoutProvider(), NOW) == 0
+    assert db.get(Wallet, creator.id).balance_paise == 500_000  # refunded once, not twice

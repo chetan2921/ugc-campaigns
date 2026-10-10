@@ -4,9 +4,9 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.domain.states import MAX_REVISIONS
-from app.models import Application, Campaign, User
+from app.models import Application, Campaign, LedgerEntry, User, Wallet, Withdrawal
 from app.schemas import (ApplicationOut, CampaignCounts, CampaignOut, CampaignSummary, CreatorSummary, EventOut,
-                         MyApplication, PayoutOut, SubmissionOut)
+                         LedgerOut, MyApplication, PayoutOut, SubmissionOut, WalletOut, WithdrawalOut)
 from app.services.campaigns import accepting_applications
 
 
@@ -44,4 +44,24 @@ def application_out(app: Application) -> ApplicationOut:
         submissions=[SubmissionOut.model_validate(s) for s in app.submissions],
         events=[EventOut.model_validate(e) for e in app.events],
         payout=PayoutOut.model_validate(app.payout) if app.payout else None,
+    )
+
+
+def wallet_out(db: Session, creator: User) -> WalletOut:
+    entries = db.scalars(select(LedgerEntry).where(LedgerEntry.user_id == creator.id).order_by(LedgerEntry.id.desc()))
+    withdrawals = db.scalars(select(Withdrawal).where(Withdrawal.user_id == creator.id).order_by(Withdrawal.id.desc()))
+    return WalletOut(
+        balance_paise=db.get(Wallet, creator.id).balance_paise,
+        upi_id=creator.upi_id,
+        entries=[
+            LedgerOut(
+                id=e.id, kind=e.kind, amount_paise=e.amount_paise, balance_after_paise=e.balance_after_paise,
+                created_at=e.created_at,
+                campaign_title=e.payout.application.campaign.title if e.payout else None,
+                payout=PayoutOut.model_validate(e.payout) if e.payout else None,
+                withdrawal_id=e.withdrawal_id,
+            )
+            for e in entries
+        ],
+        withdrawals=[WithdrawalOut.model_validate(w) for w in withdrawals],
     )

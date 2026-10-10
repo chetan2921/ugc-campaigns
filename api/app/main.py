@@ -21,7 +21,7 @@ def health():
     return {"ok": True}
 
 
-from app.routers import applications, auth, campaigns  # noqa: E402
+from app.routers import applications, auth, campaigns, wallet  # noqa: E402
 
-for router in (auth.router, campaigns.router, applications.router):
+for router in (auth.router, campaigns.router, applications.router, wallet.router):
     app.include_router(router)
