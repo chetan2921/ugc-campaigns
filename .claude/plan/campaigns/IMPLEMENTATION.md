@@ -1,16 +1,16 @@
 # campaigns implementation
 
 ## Now
-Task 12: Creator screens
+Task 13: Inbox, settings, ui-craft scans
 
 ## Next
-- 13. Inbox, settings, ui-craft scans. **Milestone 3 done.**
 - 14. README, AI logs, leak check, fresh-clone run, push. **Milestone 4 done.**
 
 Cut line if time runs short: polish in Task 13 (the slop-scan follow-ups)
 goes first. Tasks 1–12 and 14 are required by the brief.
 
 ## Done
+- 2026-10-10 Task 12: creator explore, applications with the next step, and the wallet with withdrawals. Lint and build green. At 390×844, Asha's wallet showed ₹8,731.80 and the bill added up. ₹1,000 to asha@okbank succeeded. ₹1,000 to fail@okbank showed Processing…, then the bank decline, the refund, and Try again. A new creator applied to Rainy-day snack reels, saw the live link hint, "couldn't find" on missing1, the revision note inline, and the same bill after the brand paid.
 - 2026-10-10 Task 11: brand dashboard, campaign form, applicants and post review. Lint clean. Browser click-through as the demo brand: Ravi's approval moved the meter to 2 of 3 with ₹10,000 reserved, Meera's post took a revision request, a budget below fee × slots stayed on the form with the cover error, the Rainy-day fee was locked, and cancelling Festive gift box unboxing showed the pending-applicants dialog and labelled the free budget released. Approve and Approve & pay were on the first screen at 1366×768.
 - 2026-10-10 Task 10: Next.js foundation, visual direction, auth and demo login. Lint and build green. Browser: a new creator lands on `/creator`, logout returns to `/login`, demo brand lands on `/brand`, and that brand opening `/creator` is sent back to `/brand`.
 - 2026-10-10 Task 9: demo seed (second run says already present), `dev.sh`, HTTP flow test, repo map. Flow tests passed on the first run. Health curl `{"ok":true}` and the worker logged "worker started"; both processes were then stopped. Full suite: 103 passed.

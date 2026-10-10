@@ -49,6 +49,17 @@ src/
       CampaignForm({ campaign? })
     review-panel.tsx
       ReviewPanel({ application, pending, primary?, onReview })
+    fee-note.tsx
+      FEE_NOTE
+      FeeNote()
+      FeeHint()
+    submit-post-form.tsx
+      SubmitPostForm({ applicationId, onSubmitted })
+    withdraw-form.tsx
+      paiseToRupeesInput(paise) -> string
+      WithdrawForm({ balancePaise, amount, upi, onAmountChange, onUpiChange })
+    application-card.tsx
+      ApplicationCard({ application, primary? })
     ui/                                shadcn: button, input, label, textarea, tabs, dialog, switch, tooltip, skeleton, sonner, badge
   lib/
     token.ts

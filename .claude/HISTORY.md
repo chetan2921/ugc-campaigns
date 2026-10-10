@@ -29,3 +29,6 @@
   The payout bill repeats the fee sentence under the lines. The creator browse can reuse that same sentence. The itemised bill was the alternative, with the sentence only on the campaign card.
   A tab panel that is leaving stays mounted until a CSS animation ends. These panels have no animation, so the old list stayed on screen. Hiding an inert panel was chosen over adding an exit animation.
 - 2026-10-10 Task 11 review: the campaign page latches its first non-empty tab once. A later refresh no longer moves the brand off the tab they are reading. Not pushed.
+- 2026-10-10 Task 12: creator explore, application cards with the next step, and the wallet with withdrawals. Lint, build, and the 390px click-through passed. Not pushed.
+  The fee sentence stays under the payout bill and also appears once on Explore. Dropping it from the bill was the alternative. The brief puts the sentence on Explore and does not tell the bill to drop it, so both stay.
+  "before deductions" opens on click, chosen over a hover tooltip. Creators use phones, and a hover-only tooltip never opened on tap.
