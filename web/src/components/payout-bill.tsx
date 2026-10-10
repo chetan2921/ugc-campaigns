@@ -1,8 +1,8 @@
+"use client";
+
+import { FEE_NOTE } from "@/components/fee-note";
 import { formatINR } from "@/lib/money";
 import type { Payout } from "@/lib/types";
-
-export const FEE_NOTE =
-  "Platform fee (10%) + 18% GST on that fee, and 1% TDS are deducted from this at payout.";
 
 export function PayoutBill({ payout }: { payout: Payout }) {
   const lines: [string, number][] = [

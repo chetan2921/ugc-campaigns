@@ -37,8 +37,7 @@ src/
     load-error.tsx
       LoadError({ message, onRetry })
     payout-bill.tsx
-      FEE_NOTE
-      PayoutBill({ payout })
+      PayoutBill({ payout })   fee sentence is FEE_NOTE in fee-note.tsx
     slot-meter.tsx
       slotMeterLabel(campaign) -> string
       SlotMeter({ campaign, compact? })

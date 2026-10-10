@@ -217,7 +217,17 @@ a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible {
+textarea:focus-visible,
+[role="switch"]:focus-visible,
+[role="tabpanel"]:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Chrome tabs through the parts inside a datetime-local field. The focused
+   part sits in the input's shadow tree, so the host matches :focus-within
+   and not :focus-visible. */
+input[type="datetime-local"]:focus-within {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }

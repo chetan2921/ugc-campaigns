@@ -60,4 +60,8 @@ There is no theme toggle. `.dark` exists so a later toggle stays in this palette
 
 ## Loading and empty
 
-Loading the shell is a static skeleton with one `main`. Empty sections say what will show up there, in one sentence. Errors from the API's `detail` render inline on the form. There is no toast for auth.
+Loading the shell is a static skeleton with one `main`. Empty sections say what will show up there, in one sentence. Errors from the API's `detail` render inline on the form. There is no toast for auth. Settings toasts "Saved" when a channel toggle or the profile form is saved.
+
+## Slop scan
+
+`slop-scan` on the wallet flags uniform grid dominance (48% of the page height). The three grids are the section nav, the account block under it, and the withdraw form. They stack links and fields in one column. They are not cards. The ledger stays a table, which is the balance pattern above.

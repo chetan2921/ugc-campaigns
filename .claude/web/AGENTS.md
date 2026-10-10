@@ -18,7 +18,7 @@ Symbol lookup is `.claude/web/STRUCTURE.md`.
 ```
 web/
   DESIGN.md                  visual direction
-  src/app/                   routes
+  src/app/                   routes, including /inbox and /settings
   src/components/            shell, role guard, campaign form, fee note, application card, submit form, withdraw form, bill, meter, review, shadcn ui/
   src/lib/                   api client, auth, money, time, types
 ```

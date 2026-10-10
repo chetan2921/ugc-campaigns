@@ -79,7 +79,7 @@ export function ReviewPanel({
           type="button"
           variant="outline"
           disabled={pending || waiting || revisionsUsed}
-          onClick={() => { setMode("revise"); setNoteError(null); }}
+          onClick={() => { setMode("revise"); setNote(""); setNoteError(null); }}
         >
           Request changes
         </Button>
@@ -87,7 +87,7 @@ export function ReviewPanel({
           type="button"
           variant="destructive"
           disabled={pending || waiting}
-          onClick={() => { setMode("reject"); setNoteError(null); }}
+          onClick={() => { setMode("reject"); setNote(""); setNoteError(null); }}
         >
           Reject
         </Button>
