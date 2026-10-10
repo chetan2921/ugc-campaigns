@@ -42,4 +42,4 @@ after login, so they are not prerendered.
 and `boneyard` are not installed. Their steps were done by hand. `web/DESIGN.md`
 says so.
 
-<!-- mapped: .@09f5afd paths: web/src,web/DESIGN.md,web/package.json -->
+<!-- mapped: .@d66b192 paths: web/src,web/DESIGN.md,web/package.json -->

@@ -9,7 +9,7 @@ One repo with two parts: `api/` (FastAPI + Postgres + a polling worker) and
 ## Repos
 | Repo | What it is | Mapped from | Context |
 |------|-----------|-------------|---------|
-| . (ugc-campaigns) | `api/` FastAPI service and worker; `web/` Next.js client | .@09f5afd | `.claude/ugc-campaigns/AGENTS.md`, `.claude/web/AGENTS.md` |
+| . (ugc-campaigns) | `api/` FastAPI service and worker; `web/` Next.js client | .@d66b192 | `.claude/ugc-campaigns/AGENTS.md`, `.claude/web/AGENTS.md` |
 
 ## Products
 | Product | Repos | Plan |
