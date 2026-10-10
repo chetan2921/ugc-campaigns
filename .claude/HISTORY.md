@@ -28,3 +28,4 @@
 - 2026-10-10 Task 11: brand dashboard, campaign form, applicants and post review. Lint, build, and the brand click-through passed. Not pushed.
   The payout bill repeats the fee sentence under the lines. The creator browse can reuse that same sentence. The itemised bill was the alternative, with the sentence only on the campaign card.
   A tab panel that is leaving stays mounted until a CSS animation ends. These panels have no animation, so the old list stayed on screen. Hiding an inert panel was chosen over adding an exit animation.
+- 2026-10-10 Task 11 review: the campaign page latches its first non-empty tab once. A later refresh no longer moves the brand off the tab they are reading. Not pushed.

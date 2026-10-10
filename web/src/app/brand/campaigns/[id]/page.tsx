@@ -72,7 +72,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
   const { id } = use(params);
   return (
     <Suspense fallback={<CampaignFallback />}>
-      <CampaignScreen id={id} />
+      <CampaignScreen key={id} id={id} />
     </Suspense>
   );
 }
@@ -94,9 +94,18 @@ function CampaignScreen({ id }: { id: string }) {
   const campaign = useSWR<Campaign>(`/campaigns/${id}`, api, { refreshInterval: 10_000 });
   const applications = useSWR<Application[]>(`/campaigns/${id}/applications`, api, { refreshInterval: 10_000 });
   const [picked, setPicked] = useState<Tab | null>(isTab(requested) ? requested : null);
+  const [followedQuery, setFollowedQuery] = useState(requested);
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
+
+  // The first non-empty tab is the arrival default. Later refreshes must not move it.
+  if (requested !== followedQuery) {
+    setFollowedQuery(requested);
+    if (isTab(requested)) setPicked(requested);
+  } else if (picked == null && applications.data && !isTab(requested)) {
+    setPicked(firstTab(applications.data));
+  }
 
   const failed = campaign.error || applications.error;
   if (failed) {
