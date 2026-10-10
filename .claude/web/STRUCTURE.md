@@ -14,6 +14,8 @@ src/
     brand/layout.tsx                   RequireRole role="brand"
     brand/page.tsx                     /brand
     brand/campaigns/new/page.tsx       /brand/campaigns/new
+    brand/campaigns/[id]/page.tsx      /brand/campaigns/:id
+    brand/campaigns/[id]/edit/page.tsx /brand/campaigns/:id/edit
     creator/layout.tsx                 RequireRole role="creator"
     creator/page.tsx                   /creator
     creator/campaigns/page.tsx         /creator/campaigns
@@ -32,6 +34,21 @@ src/
       StatusPill({ status })
     auth-screen.tsx
       AuthScreen({ title, lede?, children })
+    load-error.tsx
+      LoadError({ message, onRetry })
+    payout-bill.tsx
+      FEE_NOTE
+      PayoutBill({ payout })
+    slot-meter.tsx
+      slotMeterLabel(campaign) -> string
+      SlotMeter({ campaign, compact? })
+      CampaignStatus({ status })
+    timeline.tsx
+      Timeline({ events })
+    campaign-form.tsx
+      CampaignForm({ campaign? })
+    review-panel.tsx
+      ReviewPanel({ application, pending, primary?, onReview })
     ui/                                shadcn: button, input, label, textarea, tabs, dialog, switch, tooltip, skeleton, sonner, badge
   lib/
     token.ts

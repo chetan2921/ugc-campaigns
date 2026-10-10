@@ -25,3 +25,5 @@
 - 2026-10-10 Task 9: demo seed, `dev.sh` (API + worker), HTTP flow regression test, and the repo map under `.claude/ugc-campaigns/`. Flow tests passed on the first run. Not pushed.
 - 2026-10-10 Task 10: Next.js foundation, visual direction, auth and demo login. Lint, build, and the auth click-through passed. Not pushed.
   Typeface is IBM Plex Sans, chosen over a serif display. It has tabular figures for the wallet and the payout bill, and it is not on the refuse list. A serif would have landed on the cream-and-serif signature ui-craft warns about. The accent is a deep green, chosen over a purple-blue, because that gradient is refused and green is the paid state.
+- 2026-10-10 Task 11: brand dashboard, campaign form, applicants and post review. Click-through passed as the demo brand. Not pushed.
+  The payout bill repeats the fee sentence under the lines. The creator browse can reuse that same sentence. The itemised bill was the alternative, with the sentence only on the campaign card.

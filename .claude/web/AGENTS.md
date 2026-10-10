@@ -19,7 +19,7 @@ Symbol lookup is `.claude/web/STRUCTURE.md`.
 web/
   DESIGN.md                  visual direction
   src/app/                   routes
-  src/components/            shell, role guard, status pill, shadcn ui/
+  src/components/            shell, role guard, campaign form, bill, meter, review, shadcn ui/
   src/lib/                   api client, auth, money, time, types
 ```
 

@@ -22,7 +22,10 @@ type Item = {
 };
 
 function isCurrent(href: string, pathname: string) {
-  if (href === "/brand" || href === "/creator") return pathname === href;
+  if (href === "/creator") return pathname === href;
+  if (href === "/brand/campaigns/new") return pathname === href;
+  // Campaign detail and edit stay under Campaigns. New campaign has its own item.
+  if (href === "/brand") return pathname === "/brand" || (pathname.startsWith("/brand/") && pathname !== "/brand/campaigns/new");
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
