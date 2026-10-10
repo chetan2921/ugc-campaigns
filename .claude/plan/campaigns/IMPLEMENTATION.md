@@ -1,10 +1,9 @@
 # campaigns implementation
 
 ## Now
-Task 9: Seed, `dev.sh` one-command runner, HTTP flow test, repo map. **Milestone 1 and 2 done.**
+Task 10: Web foundation, ui-craft direction, auth.
 
 ## Next
-- 10. Web foundation, ui-craft direction, auth
 - 11. Brand screens
 - 12. Creator screens
 - 13. Inbox, settings, ui-craft scans. **Milestone 3 done.**
@@ -14,6 +13,7 @@ Cut line if time runs short: polish in Task 13 (the slop-scan follow-ups)
 goes first. Tasks 1–12 and 14 are required by the brief.
 
 ## Done
+- 2026-10-10 Task 9: demo seed (second run says already present), `dev.sh`, HTTP flow test, repo map. Flow tests passed on the first run. Health curl `{"ok":true}` and the worker logged "worker started"; both processes were then stopped. Full suite: 103 passed.
 - 2026-10-10 Task 8: send queued notifications outside IST quiet hours, honour opt-out and a missing phone at send time, and expire missed submission deadlines. Notification and reservation tests green. Full suite: 100 passed.
 - 2026-10-10 Task 7: wallet withdrawals, mock payout provider, and worker v1. A failed payout refunds the wallet once. Money tests green, including five parallel runs.
 - 2026-10-10 Task 6: submit an Instagram post, review it (revise, reject, or pay), and credit the net to the creator's wallet. Submission, money, and reservation tests green, including five parallel single-post payout runs.

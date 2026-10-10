@@ -34,6 +34,9 @@ Fill these in as tasks land.
 - failed payout refunds once: `test_failed_withdrawal_puts_the_money_back`, `test_settled_withdrawals_are_never_processed_twice`
 - reject frees the slot: `test_rejecting_a_post_frees_the_slot`
 - HTTP test with auth headers: `api/tests/test_api_flow.py`
+- full campaign flow over HTTP, including revise, pay, withdraw, and one worker tick: `test_full_campaign_flow_over_http`
+- wrong role is 403: `test_roles_are_enforced`
+- a business refusal is a sentence: `test_business_errors_come_back_as_readable_messages`
 
 ## Strategies that work here
 - **Real Postgres, never SQLite or mocks, for anything with locks, CHECKs or
@@ -69,6 +72,15 @@ Fill these in as tasks land.
   campaign-then-application lock those tests already cover, and it is not on
   their path. The full suite, which includes the three parallel tests once,
   passed: 100 tests in 803.02s.
+- **The HTTP flow test is a regression net.** It was written before the seed and
+  `dev.sh`, and it passed on the first run (3 passed in 106.70s) because Tasks
+  1–8 already implement that flow. It calls `run_once()` in-process. conftest
+  points the app at the `_test` database before `app.db` is imported, so that
+  tick settles the test withdrawal.
+- **Seed writes the dev database, not the test one.** From `api/`,
+  `.venv/bin/python -m app.seed`. The second run prints "Demo data already
+  present" and returns. A crash after the brand user is inserted will also
+  take that path, so a partial seed is not repaired by running it again.
 - **One pytest process at a time** against the Neon `_test` database. A second
   process's `drop_all` or `TRUNCATE` deadlocks with the first and can make
   passing tests look like missing tables.

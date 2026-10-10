@@ -22,3 +22,4 @@
 - 2026-10-10 Task 8: send queued notifications outside IST quiet hours, skip opted-out channels and WhatsApp with no phone at send time, and expire missed submission deadlines. Notification and reservation tests green. Full suite 100 passed. Not pushed.
   Deadline expiry locks the campaign row, then its applications, and re-checks the deadline under that lock. Chosen over the plan's single `FOR UPDATE` on the application rows.
   Releasing a slot updates the campaign. Locking the application first deadlocks with approve, withdraw, and cancel, which already lock the campaign first. A deadline read before the lock would still expire creators after the brand extended it.
+- 2026-10-10 Task 9: demo seed, `dev.sh` (API + worker), HTTP flow regression test, and the repo map under `.claude/ugc-campaigns/`. Flow tests passed on the first run. Not pushed.

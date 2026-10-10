@@ -99,4 +99,4 @@ NotificationOut { id, channel: "email"|"whatsapp", event, body,
 Application statuses: `applied, approved, declined, withdrawn, expired,
 submitted, revision_requested, paid, rejected`.
 
-<!-- intent: written from SPEC.md before any code; stamp it with the api sha once Task 8 lands -->
+<!-- mapped: .@PENDINGSHA paths: api/app/schemas.py,api/app/routers -->
