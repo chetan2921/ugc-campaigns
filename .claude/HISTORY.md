@@ -29,9 +29,10 @@
   The payout bill repeats the fee sentence under the lines. The creator browse can reuse that same sentence. The itemised bill was the alternative, with the sentence only on the campaign card.
   A tab panel that is leaving stays mounted until a CSS animation ends. These panels have no animation, so the old list stayed on screen. Hiding an inert panel was chosen over adding an exit animation.
 - 2026-10-10 Task 11 review: the campaign page latches its first non-empty tab once. A later refresh no longer moves the brand off the tab they are reading. Not pushed.
-- 2026-10-10 Task 13: notification inbox and settings, then the ui-craft audit (passed) and slop-scan (one wallet grid signal, justified in DESIGN.md). Lint and build green. Milestone 3, the web, is done. Not pushed.
-  The fee sentence lives on the fee note and the payout bill imports it. A second copy was the alternative. One sentence cannot drift.
-  Request changes and Reject clear the shared note when the mode switches. Keeping the previous note was the alternative, and it sent a rejection reason as a revision note.
 - 2026-10-10 Task 12: creator explore, application cards with the next step, and the wallet with withdrawals. Lint, build, and the 390px click-through passed. Not pushed.
   The fee sentence stays under the payout bill and also appears once on Explore. Dropping it from the bill was the alternative. The brief puts the sentence on Explore and does not tell the bill to drop it, so both stay.
   "before deductions" opens on click, chosen over a hover tooltip. Creators use phones, and a hover-only tooltip never opened on tap.
+- 2026-10-10 Task 13: notification inbox and settings, then the ui-craft audit (passed) and slop-scan (one wallet grid signal, justified in DESIGN.md). Lint and build green. Milestone 3, the web, is done. Not pushed.
+  The fee sentence lives on the fee note and the payout bill imports it. A second copy was the alternative. One sentence cannot drift.
+  Request changes and Reject clear the shared note when the mode switches. Keeping the previous note was the alternative, and it sent a rejection reason as a revision note.
+- 2026-10-10 Task 14: README with assumptions, decisions, friction comparison, gaps and tests; fresh clone migrated, seeded and passed the click-through. AI logs in `docs/ai-logs/` are the open item, after the author reviews them. Not pushed.

@@ -52,6 +52,7 @@ before changing either side, and update it when a side moves.
   scans). `web/DESIGN.md` is the visual source of truth once it exists.
 
 ## Navigate
+- Running the app: `README.md`.
 - Working in the API: `.claude/ugc-campaigns/AGENTS.md`.
 - Working in the web client: `.claude/web/AGENTS.md`.
 - Looking for a symbol or a file: `.claude/ugc-campaigns/STRUCTURE.md`.

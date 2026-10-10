@@ -9,7 +9,6 @@
 | web UI checks | ui-craft `audit.mjs` and `slop-scan.mjs` against the running app (PLAN Task 13) |
 
 ## Known-good examples
-Fill these in as tasks land.
 - health and test-db guard: `api/tests/test_health.py`
 - auth signup/login over HTTP: `api/tests/test_auth.py` (factories in `api/tests/factories.py`)
 - payout bill and INR format: `api/tests/test_money.py`
@@ -100,7 +99,7 @@ Fill these in as tasks land.
   wrote them. `run_concurrently` returns `"ok"` or the `DomainError` message;
   it does not re-raise that error into the caller.
 
-## Inventory (planned)
+## Inventory
 | Area | Unit | Integration (service + DB) | E2E (HTTP) | Notes |
 |------|------|-----------------------------|------------|-------|
 | Money: bill maths, INR format | test_money | test_money (payout once, parallel approve, withdraw, refund, overdraw) | test_api_flow | risky #1 |
@@ -116,5 +115,20 @@ Fill these in as tasks land.
 - No frontend unit tests. The UI is checked by the ui-craft scans and a manual
   click-through.
 - Alembic migrations aren't exercised by pytest (it uses `create_all`). The
-  fresh-clone run in Task 14 (`alembic downgrade base`, then `./dev.sh`)
-  covers them.
+  Task 14 fresh clone ran `alembic downgrade base` on the dev database, then
+  `./dev.sh` migrated and seeded. `/health` returned `{"ok":true}`.
+- Fresh-clone click-through, 2026-10-10, against that stack. Brand created
+  Evening chai reels at ₹2,000 for 2 slots. The budget prefilled to ₹4,000.
+  The creator applied. Approve moved the meter to "Slots 1 of 2 · ₹2,000
+  reserved · ₹0 paid · ₹2,000 free". The creator submitted
+  `https://www.instagram.com/reel/FreshClone01/` and the form said
+  "Instagram reel ✓". Approve & pay left the review list empty and the meter
+  at "₹0 reserved · ₹2,000 paid". The wallet went from ₹8,731.80 to
+  ₹10,478.16, with a +₹1,746.36 payout line. Withdraw ₹100 to
+  freshclone@okbank settled as "Sent to freshclone@okbank · 10 Oct 2026,
+  5:06 pm IST" and the balance was ₹10,378.16. The brand Inbox listed the
+  apply and the submit as Sent email, and WhatsApp as "Not sent: No phone
+  number". Held, at about 5 pm IST, said "Nothing in this filter." The
+  creator Inbox listed the payout and the withdrawal as Sent. Worktree
+  pytest: 103 passed, exit 0, 893s. Clone pytest: 103 passed in 969.89s.
+  `npm run lint` and `npm run build` exited 0.
