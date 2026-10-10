@@ -23,3 +23,5 @@
   Deadline expiry locks the campaign row, then its applications, and re-checks the deadline under that lock. Chosen over the plan's single `FOR UPDATE` on the application rows.
   Releasing a slot updates the campaign. Locking the application first deadlocks with approve, withdraw, and cancel, which already lock the campaign first. A deadline read before the lock would still expire creators after the brand extended it.
 - 2026-10-10 Task 9: demo seed, `dev.sh` (API + worker), HTTP flow regression test, and the repo map under `.claude/ugc-campaigns/`. Flow tests passed on the first run. Not pushed.
+- 2026-10-10 Task 10: Next.js foundation, visual direction, auth and demo login. Lint, build, and the auth click-through passed. Not pushed.
+  Typeface is IBM Plex Sans, chosen over a serif display. It has tabular figures for the wallet and the payout bill, and it is not on the refuse list. A serif would have landed on the cream-and-serif signature ui-craft warns about. The accent is a deep green, chosen over a purple-blue, because that gradient is refused and green is the paid state.

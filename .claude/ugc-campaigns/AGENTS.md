@@ -3,7 +3,7 @@
 The FastAPI service for the UGC campaign marketplace. Brands create paid
 campaigns. Creators apply, submit Instagram posts, and get paid into a wallet.
 A polling worker expires missed deadlines, settles withdrawals, and sends
-notifications. `web/` (Next.js) is the client and is not in the tree yet.
+notifications. `web/` (Next.js) is the client. Its map is `.claude/web/AGENTS.md`.
 
 ## Stack
 - Python, FastAPI, SQLAlchemy 2, Alembic, Postgres via psycopg

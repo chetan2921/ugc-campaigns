@@ -84,6 +84,11 @@ Fill these in as tasks land.
 - **One pytest process at a time** against the Neon `_test` database. A second
   process's `drop_all` or `TRUNCATE` deadlocks with the first and can make
   passing tests look like missing tables.
+- **Auth screens were checked in the browser, not by pytest.** A new creator
+  signup lands on `/creator`, logout returns to `/login`, "Try the demo as a
+  brand" lands on `/brand`, and that brand opening `/creator` is sent back to
+  `/brand`. ui-craft `audit.mjs` and `slop-scan.mjs` passed on `/login` and
+  `/signup`.
 - **The same-post check is a read, not a unique index.** Two applications can
   still submit one URL at the same moment. The sequential test does not catch
   that race.

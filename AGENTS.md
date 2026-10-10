@@ -9,7 +9,7 @@ One repo with two parts: `api/` (FastAPI + Postgres + a polling worker) and
 ## Repos
 | Repo | What it is | Mapped from | Context |
 |------|-----------|-------------|---------|
-| . (ugc-campaigns) | `api/` FastAPI service and worker; `web/` Next.js client | .@09f5afd | `.claude/ugc-campaigns/AGENTS.md` |
+| . (ugc-campaigns) | `api/` FastAPI service and worker; `web/` Next.js client | .@09f5afd | `.claude/ugc-campaigns/AGENTS.md`, `.claude/web/AGENTS.md` |
 
 ## Products
 | Product | Repos | Plan |
@@ -52,7 +52,8 @@ before changing either side, and update it when a side moves.
   scans). `web/DESIGN.md` is the visual source of truth once it exists.
 
 ## Navigate
-- Working in the code: `.claude/ugc-campaigns/AGENTS.md`.
+- Working in the API: `.claude/ugc-campaigns/AGENTS.md`.
+- Working in the web client: `.claude/web/AGENTS.md`.
 - Looking for a symbol or a file: `.claude/ugc-campaigns/STRUCTURE.md`.
 - Building a feature: `SPEC.md` for what it should do, `PLAN.md` for the
   step-by-step tasks, and `IMPLEMENTATION.md` for where the work stands.
