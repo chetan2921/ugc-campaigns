@@ -19,3 +19,6 @@
   Submit and review lock via `_lock_campaign_then_application`, chosen over `lock_application`.
   `lock_application` locks only the application row. Paying or rejecting then updates the campaign, and that order deadlocks with cancel, which locks the campaign first.
 - 2026-10-10 Task 7: wallet withdrawals, mock payout provider (a UPI id starting with `fail` is declined), and worker v1. A failed payout refunds the wallet once. Money tests green, including five parallel runs. Not pushed.
+- 2026-10-10 Task 8: send queued notifications outside IST quiet hours, skip opted-out channels and WhatsApp with no phone at send time, and expire missed submission deadlines. Notification and reservation tests green. Full suite 100 passed. Not pushed.
+  Deadline expiry locks the campaign row, then its applications, and re-checks the deadline under that lock. Chosen over the plan's single `FOR UPDATE` on the application rows.
+  Releasing a slot updates the campaign. Locking the application first deadlocks with approve, withdraw, and cancel, which already lock the campaign first. A deadline read before the lock would still expire creators after the brand extended it.

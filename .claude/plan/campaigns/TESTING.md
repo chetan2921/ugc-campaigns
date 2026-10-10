@@ -14,6 +14,11 @@ Fill these in as tasks land.
 - auth signup/login over HTTP: `api/tests/test_auth.py` (factories in `api/tests/factories.py`)
 - payout bill and INR format: `api/tests/test_money.py`
 - quiet hours (`ist()` helper): `api/tests/test_notifications.py`
+- send waits out quiet hours, including overdue messages: `test_message_created_at_night_waits_until_9am`, `test_overdue_message_still_waits_out_quiet_hours`
+- opt-out and missing phone are decided at send time: `test_opt_out_is_checked_when_sending`, `test_whatsapp_needs_a_phone_number`
+- each status change notifies the other side: `test_each_step_notifies_the_other_side`
+- missed deadline expires approved and declines pending: `test_missed_deadline_expires_and_frees_the_slot`
+- a submitted post is left alone at the deadline: `test_deadline_job_leaves_submitted_posts_alone`
 - application state table: `api/tests/test_states.py`
 - service-level test with factories: `api/tests/test_reservation.py`
 - campaign create/edit/cancel rules: `api/tests/test_campaign_rules.py`
@@ -60,6 +65,10 @@ Fill these in as tasks land.
   Task 7 ran the same `-k parallel` set five times (last-slot, one-post payout,
   and withdrawal overdraw): 3 passed each run, in 84.52s, 84.52s, 83.16s,
   84.40s, and 85.88s.
+  Task 8 did not repeat that five-run. Deadline expiry takes the same
+  campaign-then-application lock those tests already cover, and it is not on
+  their path. The full suite, which includes the three parallel tests once,
+  passed: 100 tests in 803.02s.
 - **One pytest process at a time** against the Neon `_test` database. A second
   process's `drop_all` or `TRUNCATE` deadlocks with the first and can make
   passing tests look like missing tables.

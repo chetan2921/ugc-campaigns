@@ -1,10 +1,9 @@
 # campaigns implementation
 
 ## Now
-Task 8: Sending notifications, quiet hours at send time, deadlines. Steps and code are in `PLAN.md`.
+Task 9: Seed, `dev.sh` one-command runner, HTTP flow test, repo map. **Milestone 1 and 2 done.**
 
 ## Next
-- 9. Seed, `dev.sh` one-command runner, HTTP flow test, repo map. **Milestone 1 and 2 done.**
 - 10. Web foundation, ui-craft direction, auth
 - 11. Brand screens
 - 12. Creator screens
@@ -15,6 +14,7 @@ Cut line if time runs short: polish in Task 13 (the slop-scan follow-ups)
 goes first. Tasks 1–12 and 14 are required by the brief.
 
 ## Done
+- 2026-10-10 Task 8: send queued notifications outside IST quiet hours, honour opt-out and a missing phone at send time, and expire missed submission deadlines. Notification and reservation tests green. Full suite: 100 passed.
 - 2026-10-10 Task 7: wallet withdrawals, mock payout provider, and worker v1. A failed payout refunds the wallet once. Money tests green, including five parallel runs.
 - 2026-10-10 Task 6: submit an Instagram post, review it (revise, reject, or pay), and credit the net to the creator's wallet. Submission, money, and reservation tests green, including five parallel single-post payout runs.
 - 2026-10-10 Task 5: campaign create/edit/cancel rules, presenters, and campaign/application routes. Campaign-rule tests green, including cancel keeping approved creators.

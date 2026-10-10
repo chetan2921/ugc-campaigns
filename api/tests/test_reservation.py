@@ -1,9 +1,11 @@
+from datetime import timedelta
+
 import pytest
 from sqlalchemy import select
 
 from app.errors import DomainError
 from app.models import Application, Campaign, Notification, User
-from app.services import applications, campaigns, submissions
+from app.services import applications, campaigns, deadlines, submissions
 from tests.factories import FEE, NOW, applied, approved, make_campaign, make_user, paid, run_concurrently, submitted
 
 
@@ -159,3 +161,19 @@ def test_cancelled_campaign_still_pays_approved_creators(db):
     submissions.submit(db, app.creator, app.id, "https://www.instagram.com/reel/AfterCancel1/", NOW)
     submissions.review(db, brand, app.id, "approve", None, NOW)
     assert app.status == "paid"
+
+
+def test_missed_deadline_expires_and_frees_the_slot(db):
+    campaign = make_campaign(db, make_user(db, "brand"))
+    app, pending = approved(db, campaign), applied(db, campaign)
+    assert deadlines.expire_missed_deadlines(db, campaign.submit_deadline + timedelta(minutes=1)) == 2
+    assert app.status == "expired"
+    assert pending.status == "declined"
+    assert (campaign.filled_slots, campaign.reserved_paise) == (0, 0)
+
+
+def test_deadline_job_leaves_submitted_posts_alone(db):
+    campaign = make_campaign(db, make_user(db, "brand"))
+    app = submitted(db, campaign)
+    assert deadlines.expire_missed_deadlines(db, campaign.submit_deadline + timedelta(days=1)) == 0
+    assert app.status == "submitted"
