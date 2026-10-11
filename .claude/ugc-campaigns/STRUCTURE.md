@@ -37,6 +37,7 @@ app/
     require_role(role: str)   # returns a FastAPI dependency
     brand_only, creator_only
   presenters.py
+    campaigns_out(db: Session, campaigns: list[Campaign], now: datetime, viewer: User) -> list[CampaignOut]
     campaign_out(db: Session, c: Campaign, now: datetime, viewer: User) -> CampaignOut
     application_out(app: Application) -> ApplicationOut
     wallet_out(db: Session, creator: User) -> WalletOut
@@ -152,6 +153,8 @@ app/
       approve(db: Session, brand: User, application_id: int, now: datetime) -> Application
       decline(db: Session, brand: User, application_id: int, reason: str | None, now: datetime) -> Application
       withdraw(db: Session, creator: User, application_id: int, now: datetime) -> Application
+      with_details(stmt)
+      reload_application(db: Session, app: Application) -> Application
       list_for_creator(db: Session, creator: User) -> list[Application]
       list_for_campaign(db: Session, brand: User, campaign_id: int) -> list[Application]
     submissions.py
@@ -176,4 +179,4 @@ app/
       expire_missed_deadlines(db: Session, now: datetime) -> int
 ```
 
-<!-- mapped: .@09f5afd paths: api/app,api/tests -->
+<!-- mapped: .@bebcde2 paths: api/app,api/tests -->

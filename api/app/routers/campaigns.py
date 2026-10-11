@@ -5,7 +5,7 @@ from app.auth import brand_only, creator_only, current_user
 from app.clock import utcnow
 from app.db import get_db
 from app.models import User
-from app.presenters import application_out, campaign_out
+from app.presenters import application_out, campaign_out, campaigns_out
 from app.schemas import ApplicationOut, ApplyIn, CampaignEdit, CampaignIn, CampaignOut
 from app.services import applications, campaigns
 
@@ -21,13 +21,13 @@ def create(data: CampaignIn, brand: User = Depends(brand_only), db: Session = De
 @router.get("/mine", response_model=list[CampaignOut])
 def mine(brand: User = Depends(brand_only), db: Session = Depends(get_db)):
     now = utcnow()
-    return [campaign_out(db, c, now, brand) for c in campaigns.list_for_brand(db, brand)]
+    return campaigns_out(db, campaigns.list_for_brand(db, brand), now, brand)
 
 
 @router.get("", response_model=list[CampaignOut])
 def open_campaigns(creator: User = Depends(creator_only), db: Session = Depends(get_db)):
     now = utcnow()
-    return [campaign_out(db, c, now, creator) for c in campaigns.list_open(db, now)]
+    return campaigns_out(db, campaigns.list_open(db, now), now, creator)
 
 
 @router.get("/{campaign_id}", response_model=CampaignOut)
@@ -54,4 +54,6 @@ def campaign_applications(campaign_id: int, brand: User = Depends(brand_only), d
 
 @router.post("/{campaign_id}/apply", response_model=ApplicationOut, status_code=201)
 def apply(campaign_id: int, data: ApplyIn, creator: User = Depends(creator_only), db: Session = Depends(get_db)):
-    return application_out(applications.apply(db, creator, campaign_id, data.note, utcnow()))
+    return application_out(applications.reload_application(
+        db, applications.apply(db, creator, campaign_id, data.note, utcnow())
+    ))

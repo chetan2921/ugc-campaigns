@@ -1,28 +1,52 @@
 from datetime import datetime
 
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy import func, inspect, select
+from sqlalchemy.orm import Session, joinedload
 
 from app.domain.states import MAX_REVISIONS
-from app.models import Application, Campaign, LedgerEntry, User, Wallet, Withdrawal
+from app.models import Application, Campaign, LedgerEntry, Payout, User, Wallet, Withdrawal
 from app.schemas import (ApplicationOut, CampaignCounts, CampaignOut, CampaignSummary, CreatorSummary, EventOut,
                          LedgerOut, MyApplication, PayoutOut, SubmissionOut, WalletOut, WithdrawalOut)
 from app.services.campaigns import accepting_applications
 
 
+def campaigns_out(db: Session, campaigns: list[Campaign], now: datetime, viewer: User) -> list[CampaignOut]:
+    """One brand lookup and one count (or one 'my application') lookup for the whole list."""
+    if not campaigns:
+        return []
+    brand_ids = {c.brand_id for c in campaigns if "brand" in inspect(c).unloaded}
+    if brand_ids:
+        db.scalars(select(User).where(User.id.in_(brand_ids))).all()
+    counts: dict[int, dict[str, int]] = {}
+    mine: dict[int, Application] = {}
+    ids = [c.id for c in campaigns]
+    if viewer.role == "brand":
+        rows = db.execute(
+            select(Application.campaign_id, Application.status, func.count())
+            .where(Application.campaign_id.in_(ids))
+            .group_by(Application.campaign_id, Application.status)
+        ).all()
+        for campaign_id, status, n in rows:
+            counts.setdefault(campaign_id, {})[status] = n
+    else:
+        apps = db.scalars(select(Application).where(
+            Application.campaign_id.in_(ids), Application.creator_id == viewer.id
+        ))
+        mine = {app.campaign_id: app for app in apps}
+    return [_campaign_out(c, now, viewer, counts.get(c.id, {}), mine.get(c.id)) for c in campaigns]
+
+
 def campaign_out(db: Session, c: Campaign, now: datetime, viewer: User) -> CampaignOut:
+    return campaigns_out(db, [c], now, viewer)[0]
+
+
+def _campaign_out(c: Campaign, now: datetime, viewer: User, by_status: dict[str, int],
+                  mine_app: Application | None) -> CampaignOut:
     counts, mine = None, None
     if viewer.role == "brand":
-        by_status = dict(db.execute(
-            select(Application.status, func.count())
-            .where(Application.campaign_id == c.id)
-            .group_by(Application.status)
-        ).all())
         counts = CampaignCounts(applied=by_status.get("applied", 0), to_review=by_status.get("submitted", 0))
-    else:
-        app = db.scalar(select(Application).where(Application.campaign_id == c.id, Application.creator_id == viewer.id))
-        if app:
-            mine = MyApplication(id=app.id, status=app.status)
+    elif mine_app:
+        mine = MyApplication(id=mine_app.id, status=mine_app.status)
     return CampaignOut(
         id=c.id, brand_name=c.brand.name, title=c.title, description=c.description,
         budget_paise=c.budget_paise, fee_paise=c.fee_paise, slots=c.slots, filled_slots=c.filled_slots,
@@ -48,7 +72,10 @@ def application_out(app: Application) -> ApplicationOut:
 
 
 def wallet_out(db: Session, creator: User) -> WalletOut:
-    entries = db.scalars(select(LedgerEntry).where(LedgerEntry.user_id == creator.id).order_by(LedgerEntry.id.desc()))
+    entries = db.scalars(
+        select(LedgerEntry).where(LedgerEntry.user_id == creator.id).order_by(LedgerEntry.id.desc())
+        .options(joinedload(LedgerEntry.payout).joinedload(Payout.application).joinedload(Application.campaign))
+    ).unique()
     withdrawals = db.scalars(select(Withdrawal).where(Withdrawal.user_id == creator.id).order_by(Withdrawal.id.desc()))
     return WalletOut(
         balance_paise=db.get(Wallet, creator.id).balance_paise,

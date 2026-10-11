@@ -1,14 +1,14 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { toast } from "sonner";
 import { LoadError } from "@/components/load-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ApiError, patch } from "@/lib/api";
+import { patch } from "@/lib/api";
 import { useMe } from "@/lib/auth";
+import { errorText, instant } from "@/lib/instant";
 import type { User } from "@/lib/types";
 
 const PHONE = /^\+?[0-9]{10,15}$/;
@@ -49,13 +49,12 @@ export default function SettingsPage() {
     try {
       const body: { phone: string | null; upi_id?: string | null } = { phone: nextPhone || null };
       if (creator) body.upi_id = nextUpi || null;
-      const next = await patch<User>("/me", body);
+      const next = await instant("Saved", () => patch<User>("/me", body));
       setPhoneDraft(null);
       setUpiDraft(null);
       await mutate(next, { revalidate: false });
-      toast.success("Saved");
     } catch (err) {
-      setFieldError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+      setFieldError(errorText(err));
     } finally {
       setSaving(false);
     }
@@ -68,12 +67,11 @@ export default function SettingsPage() {
     const previous = user;
     await mutate({ ...user, [field]: checked }, { revalidate: false });
     try {
-      const next = await patch<User>("/me", { [field]: checked });
+      const next = await instant("Saved", () => patch<User>("/me", { [field]: checked }));
       await mutate(next, { revalidate: false });
-      toast.success("Saved");
     } catch (err) {
       await mutate(previous, { revalidate: false });
-      setToggleError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+      setToggleError(errorText(err));
     } finally {
       setBusyOpt(null);
     }

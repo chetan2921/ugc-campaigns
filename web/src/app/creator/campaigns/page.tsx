@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
 import { ApplicationCard } from "@/components/application-card";
 import { LoadError } from "@/components/load-error";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAhead } from "@/lib/ahead";
 import { api } from "@/lib/api";
 import type { Application, AppStatus } from "@/lib/types";
 
@@ -20,9 +22,11 @@ export default function MyCampaignsPage() {
   const { data, error, isLoading, mutate } = useSWR<Application[]>("/applications/mine", api, {
     refreshInterval: 10_000,
   });
+  const ahead = useAhead(data);
+  const [notices, setNotices] = useState<Record<number, string>>({});
   const groups = GROUPS.map((group) => ({
     ...group,
-    rows: (data ?? []).filter((application) => group.match(application.status)),
+    rows: ahead.shown.filter((application) => group.match(application.status)),
   })).filter((group) => group.rows.length > 0);
   const firstAction = groups.find((group) => group.key === "action")?.rows[0]?.id;
 
@@ -46,6 +50,20 @@ export default function MyCampaignsPage() {
                 key={application.id}
                 application={application}
                 primary={application.id === firstAction}
+                notice={notices[application.id]}
+                onPreview={(status) => {
+                  setNotices((current) => {
+                    if (!current[application.id]) return current;
+                    const next = { ...current };
+                    delete next[application.id];
+                    return next;
+                  });
+                  ahead.preview(application.id, { status });
+                }}
+                onRevert={(message) => {
+                  ahead.revert(application.id);
+                  if (message) setNotices((current) => ({ ...current, [application.id]: message }));
+                }}
               />
             ))}
           </ul>

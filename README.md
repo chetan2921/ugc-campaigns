@@ -111,7 +111,6 @@ A brand wallet, subscriptions, creator tiers, and invites stay out. Showing a pr
 - No KYC or PAN. In reality, TDS without a PAN is higher.
 - The payout provider is called inside the database transaction. That is fine for a mock. A real provider needs an idempotency key, webhooks, and reconciliation.
 - No pagination.
-- List endpoints do N+1 queries.
 - The token is in localStorage, so an XSS bug can read it. There are no refresh tokens, no rate limiting, and no password reset.
 - No admin view of platform fees and taxes collected. The amounts are on the `payouts` rows.
 - A revision request that the creator never answers does not time out.

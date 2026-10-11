@@ -4,7 +4,6 @@ import { Suspense, use, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import useSWR, { mutate } from "swr";
-import { toast } from "sonner";
 import { Popover } from "@base-ui/react/popover";
 import { buttonVariants } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,9 @@ import { ReviewPanel } from "@/components/review-panel";
 import { CampaignStatus, SlotMeter } from "@/components/slot-meter";
 import { StatusPill } from "@/components/status-pill";
 import { Timeline } from "@/components/timeline";
-import { ApiError, api, post } from "@/lib/api";
+import { useAhead } from "@/lib/ahead";
+import { api, post } from "@/lib/api";
+import { errorText, instant } from "@/lib/instant";
 import { formatIST } from "@/lib/time";
 import type { AppEvent, AppStatus, Application, Campaign } from "@/lib/types";
 import { cn } from "cn";
@@ -98,6 +99,16 @@ function CampaignScreen({ id }: { id: string }) {
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [meter, setMeter] = useState<Partial<Campaign> | null>(null);
+  const [meterSource, setMeterSource] = useState(campaign.data);
+  const ahead = useAhead(applications.data);
+  if (campaign.data !== meterSource) {
+    setMeterSource(campaign.data);
+    if (campaign.data && meter) {
+      const matches = (Object.keys(meter) as (keyof Campaign)[]).every((key) => campaign.data?.[key] === meter[key]);
+      if (matches) setMeter(null);
+    }
+  }
 
   // The first non-empty tab is the arrival default. Later refreshes must not move it.
   if (requested !== followedQuery) {
@@ -123,10 +134,11 @@ function CampaignScreen({ id }: { id: string }) {
       </main>
     );
   }
+
   if (!campaign.data || !applications.data) return <CampaignFallback />;
 
-  const current = campaign.data;
-  const apps = applications.data;
+  const current = { ...campaign.data, ...meter };
+  const apps = ahead.shown;
   const tab = picked ?? firstTab(apps);
   const block = approveBlock(current);
   const groups = {
@@ -136,22 +148,36 @@ function CampaignScreen({ id }: { id: string }) {
     finished: apps.filter((app) => FINISHED.has(app.status)),
   };
 
-  async function run(task: () => Promise<unknown>, success: string): Promise<boolean> {
+  function refresh() {
+    void Promise.all([
+      mutate(`/campaigns/${id}`),
+      mutate(`/campaigns/${id}/applications`),
+      mutate("/campaigns/mine"),
+    ]);
+  }
+
+  function shiftMeter(filled: number, reserved: number, spent = 0) {
+    setMeter((prev) => {
+      const base = { ...campaign.data!, ...prev };
+      return {
+        filled_slots: base.filled_slots + filled,
+        reserved_paise: base.reserved_paise + reserved,
+        spent_paise: base.spent_paise + spent,
+      };
+    });
+  }
+
+  async function run(task: () => Promise<unknown>, success: string, preview?: () => void, undo?: () => void): Promise<boolean> {
     setActionError(null);
     setPending(true);
+    preview?.();
     try {
-      await task();
-      toast.success(success);
-      await Promise.all([
-        mutate(`/campaigns/${id}`),
-        mutate(`/campaigns/${id}/applications`),
-        mutate("/campaigns/mine"),
-      ]);
+      await instant(success, task);
+      refresh();
       return true;
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : "Something went wrong. Please try again.";
-      setActionError(message);
-      toast.error(message);
+      undo?.();
+      setActionError(errorText(err));
       return false;
     } finally {
       setPending(false);
@@ -209,7 +235,18 @@ function CampaignScreen({ id }: { id: string }) {
                       reason={block}
                       pending={pending}
                       primary={tab === "applicants" && index === 0}
-                      onApprove={() => void run(() => post(`/applications/${app.id}/approve`), `${app.creator.name} approved`)}
+                      onApprove={() => void run(
+                        () => post(`/applications/${app.id}/approve`),
+                        `${app.creator.name} approved`,
+                        () => {
+                          ahead.preview(app.id, { status: "approved" });
+                          shiftMeter(1, app.fee_paise || current.fee_paise);
+                        },
+                        () => {
+                          ahead.revert(app.id);
+                          setMeter(null);
+                        },
+                      )}
                     />
                     <DeclineButton
                       app={app}
@@ -218,6 +255,8 @@ function CampaignScreen({ id }: { id: string }) {
                         run(
                           () => post(`/applications/${app.id}/decline`, reason ? { reason } : {}),
                           `${app.creator.name} declined`,
+                          () => ahead.preview(app.id, { status: "declined" }),
+                          () => ahead.revert(app.id),
                         )
                       }
                     />
@@ -255,6 +294,25 @@ function CampaignScreen({ id }: { id: string }) {
                       run(
                         () => post(`/applications/${app.id}/review`, note ? { action, note } : { action }),
                         action === "approve" ? `Paid ${app.creator.name}` : action === "revise" ? "Changes requested" : "Post rejected",
+                        () => {
+                          if (action === "approve") {
+                            ahead.preview(app.id, { status: "paid" });
+                            shiftMeter(0, -app.fee_paise, app.fee_paise);
+                          } else if (action === "reject") {
+                            ahead.preview(app.id, { status: "rejected" });
+                            shiftMeter(-1, -app.fee_paise);
+                          } else {
+                            ahead.preview(app.id, {
+                              status: "revision_requested",
+                              revision_count: app.revision_count + 1,
+                              revisions_left: Math.max(0, app.revisions_left - 1),
+                            });
+                          }
+                        },
+                        () => {
+                          ahead.revert(app.id);
+                          if (action !== "revise") setMeter(null);
+                        },
                       )
                     }
                   />
@@ -302,11 +360,23 @@ function CampaignScreen({ id }: { id: string }) {
               type="button"
               variant="destructive"
               disabled={pending}
-              onClick={() =>
-                void run(() => post(`/campaigns/${current.id}/cancel`), "Campaign cancelled").then((ok) => {
-                  if (ok) setCancelOpen(false);
-                })
-              }
+              onClick={() => {
+                setCancelOpen(false);
+                void run(
+                  () => post(`/campaigns/${current.id}/cancel`),
+                  "Campaign cancelled",
+                  () => {
+                    setMeter({ status: "cancelled" });
+                    for (const row of apps) {
+                      if (row.status === "applied") ahead.preview(row.id, { status: "declined" });
+                    }
+                  },
+                  () => {
+                    setMeter(null);
+                    for (const row of apps) ahead.revert(row.id);
+                  },
+                );
+              }}
             >
               {pending ? "Cancelling" : "Cancel campaign"}
             </Button>
@@ -405,10 +475,9 @@ function DeclineButton({
               className="grid gap-2"
               onSubmit={(event) => {
                 event.preventDefault();
+                setOpen(false);
                 void onDecline(reason.trim()).then((ok) => {
-                  if (!ok) return;
-                  setReason("");
-                  setOpen(false);
+                  if (ok) setReason("");
                 });
               }}
             >

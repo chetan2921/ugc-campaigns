@@ -3,12 +3,12 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { mutate } from "swr";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ApiError, patch, post } from "@/lib/api";
+import { patch, post } from "@/lib/api";
+import { errorText, instant } from "@/lib/instant";
 import { formatINR } from "@/lib/money";
 import { isoToISTInput, istInputToISO } from "@/lib/time";
 import type { Campaign } from "@/lib/types";
@@ -119,17 +119,18 @@ export function CampaignForm({ campaign }: { campaign?: Campaign }) {
     setPending(true);
     try {
       if (!editing) {
-        const saved = await post<Campaign>("/campaigns", {
-          title: title.trim(),
-          description: description.trim(),
-          fee_paise: feePaise,
-          slots: slotCount,
-          budget_paise: budgetPaise,
-          apply_deadline: istInputToISO(apply),
-          submit_deadline: istInputToISO(submit),
-        });
-        toast.success("Campaign created");
-        await mutate("/campaigns/mine");
+        const saved = await instant("Campaign created", () =>
+          post<Campaign>("/campaigns", {
+            title: title.trim(),
+            description: description.trim(),
+            fee_paise: feePaise,
+            slots: slotCount,
+            budget_paise: budgetPaise,
+            apply_deadline: istInputToISO(apply),
+            submit_deadline: istInputToISO(submit),
+          }),
+        );
+        void mutate("/campaigns/mine");
         router.push(`/brand/campaigns/${saved.id}`);
         return;
       }
@@ -146,15 +147,12 @@ export function CampaignForm({ campaign }: { campaign?: Campaign }) {
         router.push(`/brand/campaigns/${campaign.id}`);
         return;
       }
-      await patch<Campaign>(`/campaigns/${campaign.id}`, body);
-      toast.success("Campaign updated");
-      await mutate(`/campaigns/${campaign.id}`);
-      await mutate("/campaigns/mine");
+      const saved = await instant("Campaign updated", () => patch<Campaign>(`/campaigns/${campaign.id}`, body));
+      void mutate(`/campaigns/${campaign.id}`, saved, { revalidate: false });
+      void mutate("/campaigns/mine");
       router.push(`/brand/campaigns/${campaign.id}`);
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : "Something went wrong. Please try again.";
-      setError(message);
-      toast.error(message);
+      setError(errorText(err));
     } finally {
       setPending(false);
     }

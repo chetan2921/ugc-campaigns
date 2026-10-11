@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.domain.states import check_transition
 from app.errors import DomainError
@@ -98,14 +98,36 @@ def withdraw(db: Session, creator: User, application_id: int, now: datetime) -> 
     return app
 
 
+def with_details(stmt):
+    """Campaign, creator, posts, history, and payout in the same query.
+
+    Presenting them one relationship at a time is a round trip per row, and each
+    round trip to the hosted database is slow enough that a button waits seconds.
+    """
+    return stmt.options(
+        joinedload(Application.campaign).joinedload(Campaign.brand),
+        joinedload(Application.creator),
+        joinedload(Application.submissions),
+        joinedload(Application.events),
+        joinedload(Application.payout),
+    )
+
+
+def reload_application(db: Session, app: Application) -> Application:
+    """Load the graph again after commit. Commit expires the row, and walking it then re-queries."""
+    return db.scalars(with_details(select(Application).where(Application.id == app.id))).unique().one()
+
+
 def list_for_creator(db: Session, creator: User) -> list[Application]:
-    return list(db.scalars(select(Application).where(Application.creator_id == creator.id)
-                           .order_by(Application.id.desc())))
+    return list(db.scalars(with_details(
+        select(Application).where(Application.creator_id == creator.id).order_by(Application.id.desc())
+    )).unique())
 
 
 def list_for_campaign(db: Session, brand: User, campaign_id: int) -> list[Application]:
     campaign = db.get(Campaign, campaign_id)
     if campaign is None or campaign.brand_id != brand.id:
         raise DomainError("Campaign not found", 404)
-    return list(db.scalars(select(Application).where(Application.campaign_id == campaign_id)
-                           .order_by(Application.id)))
+    return list(db.scalars(with_details(
+        select(Application).where(Application.campaign_id == campaign_id).order_by(Application.id)
+    )).unique())

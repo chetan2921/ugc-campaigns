@@ -53,12 +53,12 @@ src/
       FeeNote()
       FeeHint()
     submit-post-form.tsx
-      SubmitPostForm({ applicationId, onSubmitted })
+      SubmitPostForm({ applicationId, onCommit })
     withdraw-form.tsx
       paiseToRupeesInput(paise) -> string
       WithdrawForm({ balancePaise, amount, upi, onAmountChange, onUpiChange })
     application-card.tsx
-      ApplicationCard({ application, primary? })
+      ApplicationCard({ application, primary?, notice?, onPreview, onRevert })
     ui/                                shadcn: button, input, label, textarea, tabs, dialog, switch, tooltip, skeleton, sonner, badge
   lib/
     token.ts
@@ -85,10 +85,15 @@ src/
       isoToISTInput(iso) -> string
     instagram.ts
       parseInstagramUrl(text) -> { kind, shortcode } | null
+    ahead.ts
+      useAhead(rows) -> { shown, preview, revert }
+    instant.ts
+      errorText(err) -> string
+      instant(message, request) -> Promise<T>   # toast on click; error replaces it
     next-step.ts
       STATUS_LABEL, Step
       creatorNextStep(app) -> Step
       brandNextStep(app) -> Step
 ```
 
-<!-- mapped: .@172655c paths: web/src,web/DESIGN.md,web/package.json -->
+<!-- mapped: .@bebcde2 paths: web/src,web/DESIGN.md,web/package.json -->

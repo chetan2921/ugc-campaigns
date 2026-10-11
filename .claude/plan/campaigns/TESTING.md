@@ -33,6 +33,7 @@
 - failed payout refunds once: `test_failed_withdrawal_puts_the_money_back`, `test_settled_withdrawals_are_never_processed_twice`
 - reject frees the slot: `test_rejecting_a_post_frees_the_slot`
 - HTTP test with auth headers: `api/tests/test_api_flow.py`
+- campaign and application lists load in one query, not one per row: `api/tests/test_list_queries.py`
 - full campaign flow over HTTP, including revise, pay, withdraw, and one worker tick: `test_full_campaign_flow_over_http`
 - wrong role is 403: `test_roles_are_enforced`
 - a business refusal is a sentence: `test_business_errors_come_back_as_readable_messages`

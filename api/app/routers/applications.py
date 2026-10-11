@@ -19,24 +19,32 @@ def mine(creator: User = Depends(creator_only), db: Session = Depends(get_db)):
 
 @router.post("/{application_id}/approve", response_model=ApplicationOut)
 def approve(application_id: int, brand: User = Depends(brand_only), db: Session = Depends(get_db)):
-    return application_out(applications.approve(db, brand, application_id, utcnow()))
+    return application_out(applications.reload_application(db, applications.approve(db, brand, application_id, utcnow())))
 
 
 @router.post("/{application_id}/decline", response_model=ApplicationOut)
 def decline(application_id: int, data: DeclineIn, brand: User = Depends(brand_only), db: Session = Depends(get_db)):
-    return application_out(applications.decline(db, brand, application_id, data.reason, utcnow()))
+    return application_out(applications.reload_application(
+        db, applications.decline(db, brand, application_id, data.reason, utcnow())
+    ))
 
 
 @router.post("/{application_id}/withdraw", response_model=ApplicationOut)
 def withdraw(application_id: int, creator: User = Depends(creator_only), db: Session = Depends(get_db)):
-    return application_out(applications.withdraw(db, creator, application_id, utcnow()))
+    return application_out(applications.reload_application(
+        db, applications.withdraw(db, creator, application_id, utcnow())
+    ))
 
 
 @router.post("/{application_id}/submissions", response_model=ApplicationOut)
 def submit(application_id: int, data: SubmitIn, creator: User = Depends(creator_only), db: Session = Depends(get_db)):
-    return application_out(submissions.submit(db, creator, application_id, data.url, utcnow()))
+    return application_out(applications.reload_application(
+        db, submissions.submit(db, creator, application_id, data.url, utcnow())
+    ))
 
 
 @router.post("/{application_id}/review", response_model=ApplicationOut)
 def review(application_id: int, data: ReviewIn, brand: User = Depends(brand_only), db: Session = Depends(get_db)):
-    return application_out(submissions.review(db, brand, application_id, data.action, data.note, utcnow()))
+    return application_out(applications.reload_application(
+        db, submissions.review(db, brand, application_id, data.action, data.note, utcnow())
+    ))

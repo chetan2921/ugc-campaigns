@@ -38,11 +38,12 @@ export function ReviewPanel({
 
   async function send(action: ReviewAction, text?: string) {
     setNoteError(null);
-    const ok = await onReview(action, text);
-    if (!ok) return;
+    const openMode = mode;
     setMode(null);
-    setNote("");
     setPayOpen(false);
+    const ok = await onReview(action, text);
+    if (ok) setNote("");
+    else setMode(openMode);
   }
 
   function onNoteSubmit(event: FormEvent) {
@@ -93,7 +94,7 @@ export function ReviewPanel({
         </Button>
       </div>
       {revisionsUsed ? <p className="text-sm text-muted-foreground">Both revisions used</p> : null}
-      {mode ? (
+      {mode && !waiting ? (
         <form onSubmit={onNoteSubmit} className="grid max-w-lg gap-2">
           <Label htmlFor={`${mode}-${application.id}`}>{mode === "reject" ? "Reason" : "What should change"}</Label>
           <Textarea

@@ -36,3 +36,5 @@
   The fee sentence lives on the fee note and the payout bill imports it. A second copy was the alternative. One sentence cannot drift.
   Request changes and Reject clear the shared note when the mode switches. Keeping the previous note was the alternative, and it sent a rejection reason as a revision note.
 - 2026-10-10 Task 14: README with assumptions, decisions, friction comparison, gaps and tests; fresh clone migrated, seeded and passed the click-through. AI logs in `docs/ai-logs/` are the open item, after the author reviews them. Not pushed.
+- 2026-10-10 Apply, submit, and approve were waiting on one database query per row. Lists now load in one query, and the campaign screens show the new status before the save returns.
+- 2026-10-10 Confirmation toasts, dialogs, and the wallet balance react on the click (`lib/instant.ts`); a refusal turns the same toast into the reason and rolls the screen back.

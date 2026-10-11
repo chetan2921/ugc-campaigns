@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import useSWR, { mutate } from "swr";
-import { toast } from "sonner";
 import { FeeHint, FeeNote } from "@/components/fee-note";
 import { LoadError } from "@/components/load-error";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ApiError, api, post } from "@/lib/api";
+import { api, post } from "@/lib/api";
+import { errorText, instant } from "@/lib/instant";
 import { formatINR } from "@/lib/money";
 import { STATUS_LABEL } from "@/lib/next-step";
 import { formatIST } from "@/lib/time";
@@ -51,11 +51,13 @@ function CampaignRow({
   primary,
   justApplied,
   onApplied,
+  onReverted,
 }: {
   campaign: Campaign;
   primary: boolean;
   justApplied: boolean;
   onApplied: () => void;
+  onReverted: () => void;
 }) {
   const [noteOpen, setNoteOpen] = useState(false);
   const [note, setNote] = useState("");
@@ -67,14 +69,16 @@ function CampaignRow({
   async function apply() {
     setError(null);
     setPending(true);
+    onApplied();
     try {
       const text = noteOpen ? note.trim() : "";
-      await post(`/campaigns/${campaign.id}/apply`, text ? { note: text } : {});
-      toast.success("Applied. We'll let you know when the brand decides.");
-      onApplied();
-      await Promise.all([mutate("/campaigns"), mutate("/applications/mine")]);
+      await instant("Applied. We'll let you know when the brand decides.", () =>
+        post(`/campaigns/${campaign.id}/apply`, text ? { note: text } : {}),
+      );
+      void Promise.all([mutate("/campaigns"), mutate("/applications/mine")]);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+      onReverted();
+      setError(errorText(err));
     } finally {
       setPending(false);
     }
@@ -162,6 +166,7 @@ export default function ExplorePage() {
               primary={firstOpen?.id === campaign.id}
               justApplied={appliedIds.includes(campaign.id)}
               onApplied={() => setAppliedIds((ids) => (ids.includes(campaign.id) ? ids : [...ids, campaign.id]))}
+              onReverted={() => setAppliedIds((ids) => ids.filter((id) => id !== campaign.id))}
             />
           ))}
         </ul>

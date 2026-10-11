@@ -1,19 +1,17 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { mutate } from "swr";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ApiError, post } from "@/lib/api";
 import { parseInstagramUrl } from "@/lib/instagram";
 
 export function SubmitPostForm({
   applicationId,
-  onSubmitted,
+  onCommit,
 }: {
   applicationId: number;
-  onSubmitted: () => void;
+  onCommit: (url: string) => Promise<void>;
 }) {
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -36,11 +34,9 @@ export function SubmitPostForm({
     setError(null);
     setPending(true);
     try {
-      await post(`/applications/${applicationId}/submissions`, { url: url.trim() });
-      await mutate("/applications/mine");
-      onSubmitted();
+      await onCommit(url.trim());
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setPending(false);
     }

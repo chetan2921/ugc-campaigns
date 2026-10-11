@@ -2,12 +2,13 @@
 
 import { FormEvent, useState } from "react";
 import { mutate } from "swr";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ApiError, post } from "@/lib/api";
+import { post } from "@/lib/api";
+import { errorText, instant } from "@/lib/instant";
 import { rupeesToPaise } from "@/lib/money";
+import type { Wallet, Withdrawal } from "@/lib/types";
 
 export function paiseToRupeesInput(paise: number): string {
   const whole = Math.trunc(paise / 100);
@@ -44,13 +45,32 @@ export function WithdrawForm({
     setAmountError(null);
     setFormError(null);
     setPending(true);
+    const typed = amount;
+    onAmountChange("");
+    const placeholder: Withdrawal = {
+      id: -Date.now(),
+      amount_paise: paise,
+      upi_id: upi.trim(),
+      status: "processing",
+      failure_reason: null,
+      created_at: new Date().toISOString(),
+      processed_at: null,
+    };
     try {
-      await post("/wallet/withdrawals", { amount_paise: paise, upi_id: upi.trim() });
-      toast.success("Withdrawal started");
-      onAmountChange("");
-      await mutate("/wallet");
+      await instant("Withdrawal started", () =>
+        mutate<Wallet>("/wallet", post("/wallet/withdrawals", { amount_paise: paise, upi_id: upi.trim() }), {
+          optimisticData: (current) =>
+            current
+              ? { ...current, balance_paise: current.balance_paise - paise, withdrawals: [placeholder, ...current.withdrawals] }
+              : (current as unknown as Wallet),
+          populateCache: false,
+          rollbackOnError: true,
+          revalidate: true,
+        }),
+      );
     } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+      onAmountChange(typed);
+      setFormError(errorText(err));
     } finally {
       setPending(false);
     }
